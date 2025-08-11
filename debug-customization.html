@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Customization</title>
+</head>
+<body>
+    <h1>Debug Customization LocalStorage</h1>
+    <button onclick="checkLocalStorage()">Verificar localStorage</button>
+    <button onclick="clearLocalStorage()">Limpiar localStorage</button>
+    <div id="output"></div>
+    
+    <script>
+        function checkLocalStorage() {
+            const customization = localStorage.getItem('djFormCustomization');
+            const output = document.getElementById('output');
+            
+            if (customization) {
+                try {
+                    const parsed = JSON.parse(customization);
+                    output.innerHTML = '<h3>Configuración encontrada:</h3><pre>' + JSON.stringify(parsed, null, 2) + '</pre>';
+                } catch (error) {
+                    output.innerHTML = '<h3>Error al parsear:</h3><p>' + error.message + '</p><p>Datos raw: ' + customization + '</p>';
+                }
+            } else {
+                output.innerHTML = '<h3>No se encontró configuración en localStorage</h3>';
+            }
+        }
+        
+        function clearLocalStorage() {
+            localStorage.removeItem('djFormCustomization');
+            document.getElementById('output').innerHTML = '<h3>localStorage limpiado</h3>';
+        }
+        
+        // Verificar automáticamente al cargar
+        window.onload = checkLocalStorage;
+    </script>
+</body>
+</html>
