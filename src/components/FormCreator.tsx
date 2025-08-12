@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { QrCode, RefreshCw, Copy, Download, Check, Clock, Calendar, AlertCircle } from 'lucide-react';
-import { DJProfile } from '@/types/dj';
+import { DJProfile } from '@/lib/types';
 
 interface FormCreatorProps {
   djProfile: DJProfile;
