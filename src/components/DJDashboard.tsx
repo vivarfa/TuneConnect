@@ -207,7 +207,7 @@ export default function DJDashboard() {
         }));
     };
 
-    const handleDigitalWalletAdd = (wallet: { name: string; country: string; currency: string; symbol?: string; contactInfo: string; qrUrl?: string; tipAmount: number; }) => {
+    const handleDigitalWalletAdd = (wallet: { name: string; account: string; qrCodeUrl?: string; }) => {
         setDjProfile(prev => ({
             ...prev,
             payment: {
@@ -238,54 +238,57 @@ export default function DJDashboard() {
         reader.readAsDataURL(file);
     };
 
-    const generateQrAndLink = async () => {
-        setIsLoading(true);
-        setProgress(0);
-        
-        try {
-            // Progreso inicial
-            setProgress(20);
-            
-            // Llamar a la API para generar código único
-            const response = await fetch('/api/generate-unique-code', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ 
-                    djName: djProfile.djName,
-                    djProfile: djProfile 
-                })
-            });
-            
-            setProgress(60);
-            
-            if (!response.ok) {
-                throw new Error('Error generando código único');
-            }
-            
-            const data = await response.json();
-            
-            if (!data.success) {
-                throw new Error(data.error || 'Error desconocido');
-            }
-            
-            setProgress(90);
-            
-            // Actualizar estados con los datos reales
-            setUniquePageUrl(data.shortUrl);
-            setQrCodeUrl(data.qrCodeUrl);
-            
-            setProgress(100);
-            setActiveTab('qr-code');
-            
-        } catch (error) {
-            console.error('Error generando QR y link:', error);
-            alert('Error generando el código QR. Por favor, inténtalo de nuevo.');
-        } finally {
-            setIsLoading(false);
+const generateQrAndLink = async () => {
+    setIsLoading(true);
+    setProgress(0);
+    
+    try {
+        // PASO 1 (NUEVO): Asegurarnos de que el perfil más reciente está guardado
+        // Esto subirá la imagen a Vercel Blob y guardará la URL en KV.
+        setProgress(25);
+        const saveResponse = await fetch('/api/save-dj-profile', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ djProfile })
+        });
+
+        if (!saveResponse.ok) {
+            throw new Error('No se pudo guardar el perfil antes de generar el QR.');
         }
-    };
+        setProgress(50);
+        
+        // PASO 2: Ahora llamamos a la API para generar el código, enviando SOLO el nombre.
+        const response = await fetch('/api/generate-unique-code', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ djName: djProfile.djName }) // <-- ¡Solo el nombre!
+        });
+        
+        setProgress(80);
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Error generando código único');
+        }
+        
+        const data = await response.json();
+        
+        if (!data.success) {
+            throw new Error(data.error || 'Error desconocido');
+        }
+        
+        setProgress(100);
+        
+        setUniquePageUrl(data.shortUrl);
+        setQrCodeUrl(data.qrCodeUrl);
+        
+    } catch (error) {
+        console.error('Error generando QR y link:', error);
+        alert(`Error: ${error instanceof Error ? error.message : 'Inténtalo de nuevo.'}`);
+    } finally {
+        setIsLoading(false);
+    }
+};
 
     // Función para guardar el perfil automáticamente
     const saveProfileAutomatically = async () => {
@@ -359,7 +362,7 @@ export default function DJDashboard() {
         }, 1000); // Esperar 1 segundo después del último cambio
 
         return () => clearTimeout(timeoutId);
-    }, [djProfile.djName, djProfile.notifications.whatsappNumber, djProfile.bio, djProfile.welcomeMessage, djProfile.payment]);
+    }, [djProfile.djName, djProfile.notifications.whatsappNumber, djProfile.bio, djProfile.welcomeMessage, djProfile.payment, djProfile.profilePictureUrl]);
 
     const toggleTheme = () => {
         const newMode = isDarkMode ? 'light' : 'dark';
@@ -607,9 +610,9 @@ function SidebarNav({ activeTab, setActiveTab, djProfile, canNavigateToTab, isDa
                 }`}>
                     <div className="flex items-center gap-2 sm:gap-3">
                         <div className="relative w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10 rounded-md sm:rounded-lg overflow-hidden shadow-md transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg">
-                            {djProfile.profileImage ? (
+                            {djProfile.profilePictureUrl ? (
                                 <Image 
-                                    src={djProfile.profileImage} 
+                                    src={djProfile.profilePictureUrl} 
                                     alt={djProfile.djName || 'DJ Profile'} 
                                     width={40} 
                                     height={40} 
@@ -1213,7 +1216,7 @@ function PaymentSettings({ djProfile, onPaymentChange, onNext, onPrevious, isSte
     const [showCustomWallet, setShowCustomWallet] = useState(false);
     const [customWalletName, setCustomWalletName] = useState('');
     
-    const selectedCountryData = digitalWalletsByCountry[djProfile.payment.country || 'Perú'];
+    const selectedCountryData = digitalWalletsByCountry[djProfile.payment.country as keyof typeof digitalWalletsByCountry || 'Perú'];
     const displaySymbol = djProfile.payment.customCurrencySymbol || selectedCountryData?.symbol || '$';
     
     const addDigitalWallet = () => {
@@ -1268,7 +1271,7 @@ function PaymentSettings({ djProfile, onPaymentChange, onNext, onPrevious, isSte
     
     const addCustomWallet = () => {
         if (customWalletName.trim()) {
-            const selectedCountryData = digitalWalletsByCountry[djProfile.payment.country || 'Perú'];
+            const selectedCountryData = digitalWalletsByCountry[djProfile.payment.country as keyof typeof digitalWalletsByCountry || 'Perú'];
             if (selectedCountryData && selectedCountryData.wallets) {
                 // Agregar la billetera personalizada a la lista del país
                 selectedCountryData.wallets.push(customWalletName.trim());
@@ -1339,17 +1342,18 @@ function PaymentSettings({ djProfile, onPaymentChange, onNext, onPrevious, isSte
                         <Input
                             type="number"
                             min="1"
-                            value={djProfile.payment.minTip || ''}
+                            value={djProfile.payment.minTip}
                             onChange={(e) => {
-                                const value = e.target.value;
-                                if (value === '') {
-                                    onPaymentChange('minTip', '');
+                                const value = parseInt(e.target.value);
+                                if (isNaN(value) || value < 1) {
+                                    onPaymentChange('minTip', 1);
                                 } else {
-                                    onPaymentChange('minTip', parseInt(value) || 9);
+                                    onPaymentChange('minTip', value);
                                 }
                             }}
                             onBlur={(e) => {
-                                if (e.target.value === '' || parseInt(e.target.value) < 1) {
+                                const value = parseInt(e.target.value);
+                                if (isNaN(value) || value < 1) {
                                     onPaymentChange('minTip', 9);
                                 }
                             }}
@@ -1505,7 +1509,7 @@ function PaymentSettings({ djProfile, onPaymentChange, onNext, onPrevious, isSte
                                             <SelectValue placeholder="Selecciona una billetera" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {selectedCountryData?.wallets?.map((wallet) => (
+                                            {selectedCountryData?.wallets?.map((wallet: string) => (
                                                 <SelectItem key={wallet} value={wallet}>{wallet}</SelectItem>
                                             )) || []}
                                             <SelectItem value="custom">Otra billetera (personalizada)</SelectItem>
@@ -1780,7 +1784,7 @@ function PreviewPage({ djProfile, onNext, onPrevious, isDarkMode }: {
         setCustomization(predefinedStyles[styleName]);
     };
     
-    const selectedCountryData = digitalWalletsByCountry[djProfile.payment.country || 'Perú'];
+    const selectedCountryData = digitalWalletsByCountry[djProfile.payment.country as keyof typeof digitalWalletsByCountry || 'Perú'];
     const displaySymbol = djProfile.payment.customCurrencySymbol || selectedCountryData?.symbol || '$';
     
     const handleFormNext = () => {
@@ -1922,7 +1926,7 @@ function PreviewPage({ djProfile, onNext, onPrevious, isDarkMode }: {
                                         <Label className={`text-sm sm:text-base font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Animaciones</Label>
                                         <select 
                                             value={customization.animations || "enabled"}
-                                            onChange={(e) => setCustomization({...customization, animations: e.target.value})}
+                                            onChange={(e) => setCustomization({...customization, animations: e.target.value as 'enabled' | 'disabled' | 'subtle' | 'enhanced'})}
                                             className={`w-full mt-1 sm:mt-2 p-2 text-sm sm:text-base rounded border ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
                                         >
                                             <option value="enabled">Habilitadas</option>
@@ -1935,7 +1939,7 @@ function PreviewPage({ djProfile, onNext, onPrevious, isDarkMode }: {
                                         <Label className={`text-sm sm:text-base font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Efectos de Hover</Label>
                                         <select 
                                             value={customization.hoverEffects || "normal"}
-                                            onChange={(e) => setCustomization({...customization, hoverEffects: e.target.value})}
+                                            onChange={(e) => setCustomization({...customization, hoverEffects: e.target.value as 'none' | 'normal' | 'glow' | 'scale'})}
                                             className={`w-full mt-1 sm:mt-2 p-2 text-sm sm:text-base rounded border ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
                                         >
                                             <option value="none">Sin efectos</option>
@@ -1958,7 +1962,7 @@ function PreviewPage({ djProfile, onNext, onPrevious, isDarkMode }: {
                                         <Label className={`text-sm sm:text-base font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Estilo de Sombras</Label>
                                         <select 
                                             value={customization.shadowStyle || "normal"}
-                                            onChange={(e) => setCustomization({...customization, shadowStyle: e.target.value})}
+                                            onChange={(e) => setCustomization({...customization, shadowStyle: e.target.value as 'none' | 'subtle' | 'normal' | 'dramatic'})}
                                             className={`w-full mt-1 sm:mt-2 p-2 text-sm sm:text-base rounded border ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
                                         >
                                             <option value="none">Sin sombras</option>
@@ -2162,7 +2166,7 @@ function PreviewPage({ djProfile, onNext, onPrevious, isDarkMode }: {
                                         <Label className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Estilo de Botones</Label>
                                         <select 
                                             value={customization.buttonStyle || "solid"}
-                                            onChange={(e) => setCustomization({...customization, buttonStyle: e.target.value})}
+                                            onChange={(e) => setCustomization({...customization, buttonStyle: e.target.value as 'outline' | 'solid' | 'ghost' | 'gradient'})}
                                             className={`w-full mt-2 p-2 rounded border ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
                                         >
                                             <option value="solid">Sólido</option>
@@ -2176,7 +2180,7 @@ function PreviewPage({ djProfile, onNext, onPrevious, isDarkMode }: {
                                         <Label className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Espaciado</Label>
                                         <select 
                                             value={customization.spacing || "normal"}
-                                            onChange={(e) => setCustomization({...customization, spacing: e.target.value})}
+                                            onChange={(e) => setCustomization({...customization, spacing: e.target.value as 'compact' | 'normal' | 'relaxed' | 'loose'})}
                                             className={`w-full mt-2 p-2 rounded border ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
                                         >
                                             <option value="compact">Compacto</option>
@@ -2192,7 +2196,7 @@ function PreviewPage({ djProfile, onNext, onPrevious, isDarkMode }: {
                                     <Label className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Estilo de Gradientes</Label>
                                     <select 
                                         value={customization.gradientStyle || "none"}
-                                        onChange={(e) => setCustomization({...customization, gradientStyle: e.target.value})}
+                                        onChange={(e) => setCustomization({...customization, gradientStyle: e.target.value as 'subtle' | 'none' | 'vibrant' | 'rainbow'})}
                                         className={`w-full mt-2 p-2 rounded border ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
                                     >
                                         <option value="none">Sin gradientes</option>
@@ -2207,7 +2211,7 @@ function PreviewPage({ djProfile, onNext, onPrevious, isDarkMode }: {
                                     <Label className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Estilo de Iconos</Label>
                                     <select 
                                         value={customization.iconStyle || "default"}
-                                        onChange={(e) => setCustomization({...customization, iconStyle: e.target.value})}
+                                        onChange={(e) => setCustomization({...customization, iconStyle: e.target.value as 'default' | 'outlined' | 'filled' | 'rounded'})}
                                         className={`w-full mt-2 p-2 rounded border ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
                                     >
                                         <option value="default">Por defecto</option>
@@ -2234,7 +2238,10 @@ function PreviewPage({ djProfile, onNext, onPrevious, isDarkMode }: {
                                             shadowStyle: 'normal',
                                             transparency: 0,
                                             gradientStyle: 'none',
-                                            iconStyle: 'default'
+                                            iconStyle: 'default',
+                                            inputBackgroundColor: '#ffffff',
+                                            inputTextColor: '#000000',
+                                            inputBorderColor: '#d1d5db'
                                         })}
                                         variant="outline"
                                         size="sm"
@@ -2250,7 +2257,7 @@ function PreviewPage({ djProfile, onNext, onPrevious, isDarkMode }: {
                                 .replace(/[^a-z0-9\s-]/g, '')
                                 .replace(/\s+/g, '-')
                                 .replace(/-+/g, '-')
-                                .trim('-');
+                                .replace(/^-+|-+$/g, '');
                             
                             localStorage.setItem(`djFormCustomization_${djSlug}`, JSON.stringify(customization));
                             console.log(`🎨 Personalización guardada para ${djSlug}:`, customization);
@@ -2451,7 +2458,7 @@ function PreviewPage({ djProfile, onNext, onPrevious, isDarkMode }: {
                                 .replace(/[^a-z0-9\s-]/g, '')
                                 .replace(/\s+/g, '-')
                                 .replace(/-+/g, '-')
-                                .trim('-');
+                                .replace(/^-+|-+$/g, '');
                             
                             // Guardar configuración en localStorage antes de continuar
                             localStorage.setItem(`djFormCustomization_${djSlug}`, JSON.stringify(customization));

@@ -19,7 +19,7 @@ function createDjSlug(djName: string): string {
     .replace(/[^a-z0-9\s-]/g, '') // Remover caracteres especiales
     .replace(/\s+/g, '-') // Reemplazar espacios con guiones
     .replace(/-+/g, '-') // Remover guiones múltiples
-    .trim('-'); // Remover guiones al inicio y final
+    .replace(/^-+|-+$/g, ''); // Remover guiones al inicio y final
 }
 
 export async function POST(request: NextRequest) {

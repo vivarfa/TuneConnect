@@ -92,7 +92,7 @@ export default function RequestPage({ params, searchParams }: { params: Promise<
         .replace(/[^a-z0-9\s-]/g, '')
         .replace(/\s+/g, '-')
         .replace(/-+/g, '-')
-        .trim('-');
+        .replace(/^-+|-+$/g, '');
       
       const savedCustomization = localStorage.getItem(`djFormCustomization_${djSlug}`);
       console.log(`🎨 Cargando personalización para ${djSlug} desde localStorage:`, savedCustomization);

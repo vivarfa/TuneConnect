@@ -5,48 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, ArrowRight, Phone, Upload, Music, Check, ExternalLink } from 'lucide-react';
-
-interface DJProfile {
-  id: string;
-  name: string;
-  theme?: {
-    primaryColor?: string;
-    secondaryColor?: string;
-    fontFamily?: string;
-    borderRadius?: number;
-  };
-  colors?: {
-    primary?: string;
-    secondary?: string;
-  };
-  payment?: {
-    minTip?: number;
-    paypalEnabled?: boolean;
-    paypalEmail?: string;
-    paypalMeLink?: string;
-    digitalWallets?: Array<{
-      name: string;
-      account: string;
-      qrCodeUrl?: string;
-    }>;
-    wallets?: Array<{
-      type: string;
-      address: string;
-      qrCode?: string;
-    }>;
-  };
-  notifications?: {
-    whatsappNumber?: string;
-  };
-  customization?: {
-    backgroundColor: string;
-    textColor: string;
-    inputBackgroundColor: string;
-    inputTextColor: string;
-    inputBorderColor: string;
-    transparency?: number;
-  };
-}
+import { DJProfile } from '@/lib/types';
 
 export function RequestForm({ djProfile, isPreview = false, customization: propCustomization }: { djProfile: DJProfile; isPreview?: boolean; customization?: any }) {
   const [formStep, setFormStep] = useState(1);
