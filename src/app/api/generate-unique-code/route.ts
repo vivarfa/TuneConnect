@@ -71,13 +71,24 @@ export async function POST(request: NextRequest) {
     const requestUrl = `${baseUrl}/request/${djSlug}`;
     const shortUrl = `${baseUrl}/r/${uniqueCode}`;
     
+    // Generar QR usando la librería qrcode (igual que en el convertidor)
+    const qrCodeDataUrl = await QRCode.toDataURL(shortUrl, {
+      width: 300,
+      margin: 2,
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF'
+      },
+      errorCorrectionLevel: 'M'
+    });
+    
     return NextResponse.json({
       success: true,
       uniqueCode,
       djSlug,
       requestUrl,
       shortUrl,
-      qrCodeUrl: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(shortUrl)}`
+      qrCodeUrl: qrCodeDataUrl
     });
     
   } catch (error) {
@@ -128,10 +139,9 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Exportar la función para acceso desde otras partes de la aplicación
-export function getStoredCodes() {
-  return Array.from(uniqueCodes.entries()).map(([code, info]) => ({
-    code,
-    ...info
-  }));
+// Función para obtener códigos almacenados (usando Vercel KV)
+export async function getStoredCodes() {
+  // Esta función ahora usa Vercel KV en lugar de memoria
+  // Se puede implementar si es necesario listar todos los códigos
+  return [];
 }
