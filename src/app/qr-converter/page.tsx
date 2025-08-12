@@ -41,9 +41,8 @@ export default function QrConverterPage() {
             }
             
             const blob = await response.json();
-            // Convertir URL relativa a URL completa
-            const fullUrl = `${window.location.origin}${blob.url}`;
-            return fullUrl;
+            // La URL de Vercel Blob ya es completa, no necesita concatenación
+            return blob.url;
         } catch (error) {
             console.error('Error uploading image:', error);
             throw error;
