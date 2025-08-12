@@ -90,6 +90,8 @@ export async function setCodeData(code: string, data: { djName: string, djSlug: 
       return;
     } catch (error) {
       console.error('Error setting code in KV:', error);
+      // Si KV falla en producción, lanzar el error para que la API lo maneje
+      throw new Error('Failed to save code: Vercel KV not configured. Please set up KV database in Vercel dashboard.');
     }
   }
   
@@ -167,6 +169,8 @@ export async function saveDjProfile(slug: string, profile: any) {
       return;
     } catch (error) {
       console.error('Error saving DJ profile to KV:', error);
+      // Si KV falla en producción, lanzar el error para que la API lo maneje
+      throw new Error('Failed to save profile: Vercel KV not configured. Please set up KV database in Vercel dashboard.');
     }
   }
   

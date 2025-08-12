@@ -253,6 +253,10 @@ const generateQrAndLink = async () => {
         });
 
         if (!saveResponse.ok) {
+            const saveErrorData = await saveResponse.json();
+            if (saveErrorData.error?.includes('Vercel KV not configured')) {
+                throw new Error('⚠️ Para generar códigos QR en producción, necesitas configurar Vercel KV. Consulta CONFIGURACION_VERCEL.md para instrucciones.');
+            }
             throw new Error('No se pudo guardar el perfil antes de generar el QR.');
         }
         setProgress(50);
@@ -309,6 +313,13 @@ const generateQrAndLink = async () => {
             if (response.ok) {
                 const data = await response.json();
                 console.log(`✅ Perfil guardado automáticamente: ${data.djSlug}`);
+            } else {
+                const errorData = await response.json();
+                if (errorData.error?.includes('Vercel KV not configured')) {
+                    console.warn('⚠️ Vercel KV no configurado - usando almacenamiento local');
+                } else {
+                    console.error('Error guardando perfil:', errorData.error);
+                }
             }
         } catch (error) {
             console.error('Error guardando perfil automáticamente:', error);
