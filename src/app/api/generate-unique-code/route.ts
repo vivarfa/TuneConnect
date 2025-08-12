@@ -24,7 +24,7 @@ function createDjSlug(djName: string): string {
 
 export async function POST(request: NextRequest) {
   try {
-    const { djName, djProfile } = await request.json();
+    const { djName } = await request.json();
     
     if (!djName || typeof djName !== 'string' || djName.trim().length === 0) {
       return NextResponse.json(
@@ -33,22 +33,15 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    if (!djProfile) {
-      return NextResponse.json(
-        { error: 'Perfil del DJ es requerido' },
-        { status: 400 }
-      );
-    }
-    
     // Generar código único (intentar hasta 10 veces para evitar duplicados)
-      let uniqueCode = '';
-      let attempts = 0;
-      
-      do {
-        uniqueCode = generateUniqueCode();
-        attempts++;
-      } while (await codeExists(uniqueCode) && attempts < 10);
+    let uniqueCode = '';
+    let attempts = 0;
     
+    do {
+      uniqueCode = generateUniqueCode();
+      attempts++;
+    } while (await codeExists(uniqueCode) && attempts < 10);
+  
     if (attempts >= 10) {
       return NextResponse.json(
         { error: 'No se pudo generar un código único' },
@@ -58,11 +51,11 @@ export async function POST(request: NextRequest) {
     
     const djSlug = createDjSlug(djName.trim());
     
-    // Almacenar el código
+    // Almacenar solo la referencia del código al slug del DJ (no todo el perfil)
     await setCodeData(uniqueCode, {
       djName: djName.trim(),
       djSlug,
-      djProfile,
+      djProfile: null, // No almacenamos el perfil completo aquí
       createdAt: new Date()
     });
     
@@ -71,7 +64,7 @@ export async function POST(request: NextRequest) {
     const requestUrl = `${baseUrl}/request/${djSlug}`;
     const shortUrl = `${baseUrl}/r/${uniqueCode}`;
     
-    // Generar QR usando la librería qrcode (igual que en el convertidor)
+    // Generar QR usando la librería qrcode (solo con la URL corta)
     const qrCodeDataUrl = await QRCode.toDataURL(shortUrl, {
       width: 300,
       margin: 2,

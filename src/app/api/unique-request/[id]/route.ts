@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { redirect } from 'next/navigation';
+import { getCodeData } from '@/lib/database';
 
 export async function GET(
   request: NextRequest,
@@ -16,14 +16,19 @@ export async function GET(
       );
     }
 
-    // Por ahora, redirigimos a dj-vibe como ejemplo
-    // En una implementación real, aquí buscarías en la base de datos
-    // qué DJ corresponde a este ID único
-    const djSlug = 'dj-vibe'; // Esto debería venir de la base de datos
+    // Buscar el código en la base de datos
+    const codeData = await getCodeData(id.toUpperCase());
+    
+    if (!codeData || !codeData.djSlug) {
+      return NextResponse.json(
+        { error: 'Código no encontrado' },
+        { status: 404 }
+      );
+    }
     
     // Redirigir al formulario de solicitud del DJ
     return NextResponse.redirect(
-      new URL(`/request/${djSlug}`, request.url)
+      new URL(`/request/${codeData.djSlug}`, request.url)
     );
   } catch (error) {
     console.error('Error en unique-request route:', error);
