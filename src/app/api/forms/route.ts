@@ -41,8 +41,14 @@ export async function POST(request: NextRequest) {
     
     // Generar ID único
     // Verificar disponibilidad de KV primero
-    const kvAvailable = await isKVAvailable();
-    
+    let kvAvailable = false;
+    try {
+      kvAvailable = await isKVAvailable();
+    } catch (error) {
+      console.warn('Error checking KV availability:', error);
+      kvAvailable = false;
+    }
+
     let uniqueId = '';
     let attempts = 0;
     
@@ -58,6 +64,7 @@ export async function POST(request: NextRequest) {
         } catch (error) {
           console.log('⚠️ Error verificando ID en KV, usando memoria:', error);
           existing = memoryForms.get(uniqueId);
+          kvAvailable = false; // Desactivar KV para el resto de la operación
         }
       } else {
         existing = memoryForms.get(uniqueId);
@@ -101,7 +108,9 @@ export async function POST(request: NextRequest) {
         console.log(`Form ${uniqueId} saved to Vercel KV`);
       } catch (error) {
         console.error('Failed to save to KV, using memory fallback:', error);
-        // Los datos ya están en formData, continuamos
+        // Guardar en memoria como fallback
+        memoryForms.set(uniqueId, formData);
+        storageMethod = 'memory-fallback';
       }
     } else {
        console.warn(`Form ${uniqueId} saved to memory storage (KV not available)`);
@@ -114,17 +123,24 @@ export async function POST(request: NextRequest) {
     const shortUrl = `${baseUrl}/form/${uniqueId}`;
     
     // Generar código QR con configuración optimizada
-    const qrCodeDataUrl = await QRCode.toDataURL(shortUrl, {
-      width: 300,
-      margin: 2,
-      color: {
-        dark: '#000000',
-        light: '#FFFFFF'
-      },
-      errorCorrectionLevel: 'M'
-    });
+    let qrCodeDataUrl = '';
+    try {
+      qrCodeDataUrl = await QRCode.toDataURL(shortUrl, {
+        width: 300,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        },
+        errorCorrectionLevel: 'M'
+      });
+    } catch (qrError) {
+      console.error('Error generating QR code:', qrError);
+      // Continuar sin QR si hay error
+      qrCodeDataUrl = '';
+    }
     
-    return NextResponse.json({
+    const response = {
       success: true,
       id: uniqueId,
       shortUrl,
@@ -132,7 +148,9 @@ export async function POST(request: NextRequest) {
       djSlug,
       expiresAt: expiresAt.toISOString(),
       storageMethod // Informar qué método de almacenamiento se usó
-    });
+    };
+    
+    return NextResponse.json(response);
     
   } catch (error) {
     console.error('Error creando formulario:', error);

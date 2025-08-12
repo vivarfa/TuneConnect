@@ -110,9 +110,14 @@ export async function isKVAvailable(): Promise<boolean> {
   if (!isProduction()) return false;
   
   try {
-    // Intentar una operación simple para verificar KV
-    await kv.set('health-check', 'ok');
-    await kv.del('health-check');
+    // Verificar si las variables de entorno de KV están disponibles
+    if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) {
+      console.warn('Vercel KV environment variables not found');
+      return false;
+    }
+    
+    // Intentar una operación de lectura simple (menos invasiva)
+    await kv.get('kv-test-key');
     return true;
   } catch (error) {
     console.warn('Vercel KV not available:', error);
