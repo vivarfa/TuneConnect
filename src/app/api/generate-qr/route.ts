@@ -2,21 +2,45 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
-    const { url } = await request.json();
+    // 1. RECIBIMOS LA URL DE LA IMAGEN DESDE EL FRONTEND
+    const { url: imageUrl } = await request.json();
     
-    if (!url) {
-      return NextResponse.json({ error: 'URL is required' }, { status: 400 });
+    if (!imageUrl) {
+      return NextResponse.json({ error: 'La URL de la imagen es requerida.' }, { status: 400 });
     }
 
-    // Usar múltiples servicios de QR como fallback
+    // --- LA CORRECCIÓN PRINCIPAL ESTÁ AQUÍ ---
+
+    // 2. CONSTRUIMOS LA URL DE DESTINO CORRECTA QUE IRÁ DENTRO DEL QR
+    // Esta será una página en tu propio sitio que mostrará la imagen.
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+    
+    if (!baseUrl) {
+      // Este error es importante si olvidas poner la variable de entorno en Vercel
+      throw new Error("Error crítico: La variable de entorno NEXT_PUBLIC_BASE_URL no está configurada en Vercel.");
+    }
+
+    // Creamos la URL a la página de visualización, por ejemplo: /show-qr
+    const targetUrl = new URL('/show-qr', baseUrl); 
+    
+    // Añadimos la URL de la imagen como un parámetro de búsqueda seguro
+    targetUrl.searchParams.set('imageUrl', imageUrl);
+
+    // Este es el string final y VÁLIDO que se codificará en el QR
+    const finalUrlToEncode = targetUrl.toString();
+
+    // ---------------------------------------------
+
+
+    // 3. USAMOS LA NUEVA URL PARA GENERAR EL QR CON LOS SERVICIOS EXTERNOS
     const qrServices = [
       {
         name: 'qr-server',
-        url: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&format=png&ecc=M&data=${encodeURIComponent(url)}`
+        url: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&format=png&ecc=M&data=${encodeURIComponent(finalUrlToEncode)}`
       },
       {
         name: 'qrcode-monkey',
-        url: `https://api.qrserver.com/v1/create-qr-code/?size=400x400&format=png&ecc=H&data=${encodeURIComponent(url)}`
+        url: `https://api.qrserver.com/v1/create-qr-code/?size=400x400&format=png&ecc=H&data=${encodeURIComponent(finalUrlToEncode)}`
       }
     ];
 
@@ -24,27 +48,19 @@ export async function POST(request: NextRequest) {
     
     for (const service of qrServices) {
       try {
-        console.log(`Trying QR service: ${service.name}`);
-        
-        const response = await fetch(service.url, {
-          method: 'GET',
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-          }
-        });
+        console.log(`Intentando servicio de QR: ${service.name}`);
+        const response = await fetch(service.url);
         
         if (response.ok) {
-          // Convertir la imagen a base64
           const imageBuffer = await response.arrayBuffer();
           const base64Image = Buffer.from(imageBuffer).toString('base64');
           const dataUrl = `data:image/png;base64,${base64Image}`;
           
-          console.log(`QR generated successfully with ${service.name}`);
+          console.log(`QR generado exitosamente con ${service.name}`);
           
           return NextResponse.json({ 
             qrCodeUrl: dataUrl,
-            originalUrl: url,
-            method: service.name,
+            originalUrl: finalUrlToEncode, // Devolvemos la URL correcta que se usó
             success: true
           });
         } else {
@@ -52,21 +68,20 @@ export async function POST(request: NextRequest) {
         }
         
       } catch (serviceError) {
-        console.log(`Service ${service.name} failed:`, serviceError);
+        console.log(`Servicio ${service.name} falló:`, serviceError);
         lastError = serviceError;
         continue;
       }
     }
     
-    // Si todos los servicios fallan, devolver error
-    throw new Error(`All QR services failed. Last error: ${lastError}`);
+    throw new Error(`Todos los servicios de QR fallaron. Último error: ${lastError}`);
     
   } catch (error) {
-    console.error('Error generating QR code:', error);
+    console.error('Error al generar el código QR:', error);
     return NextResponse.json(
       { 
-        error: 'Failed to generate QR code', 
-        details: error instanceof Error ? error.message : 'Unknown error',
+        error: 'Falló la generación del código QR', 
+        details: error instanceof Error ? error.message : 'Error desconocido',
         success: false
       }, 
       { status: 500 }
