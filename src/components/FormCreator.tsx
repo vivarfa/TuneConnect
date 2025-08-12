@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { QrCode, RefreshCw, Copy, Download, Check, Clock, Calendar } from 'lucide-react';
+import { QrCode, RefreshCw, Copy, Download, Check, Clock, Calendar, AlertCircle } from 'lucide-react';
 import { DJProfile } from '@/types/dj';
 
 interface FormCreatorProps {
@@ -22,6 +22,7 @@ interface FormResponse {
   qrCodeUrl: string;
   djSlug: string;
   expiresAt: string;
+  storageMethod?: string;
 }
 
 export default function FormCreator({ djProfile, isDarkMode = false }: FormCreatorProps) {
@@ -163,6 +164,14 @@ export default function FormCreator({ djProfile, isDarkMode = false }: FormCreat
           {isGenerating ? 'Generando...' : 'Generar Formulario QR'}
         </Button>
 
+        {/* Mensaje de error */}
+        {error && (
+          <Alert className="mb-4">
+            <AlertCircle className="w-4 h-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
         {/* Resultados */}
         {formData && (
           <div className="space-y-6">
@@ -249,6 +258,11 @@ export default function FormCreator({ djProfile, isDarkMode = false }: FormCreat
               <p className="text-sm">
                 ID: {formData.id} | Expira: {new Date(formData.expiresAt).toLocaleDateString('es-ES')}
               </p>
+              {formData.storageMethod && (
+                <p className="text-xs mt-1 opacity-75">
+                  Almacenado en: {formData.storageMethod === 'vercel-kv' ? 'Vercel KV (Persistente)' : 'Memoria (Temporal)'}
+                </p>
+              )}
             </div>
           </div>
         )}

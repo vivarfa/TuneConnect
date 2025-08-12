@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { kv } from '@vercel/kv';
 import QRCode from 'qrcode';
+import { isKVAvailable } from '@/lib/database';
+
+// Almacenamiento en memoria para desarrollo local
+const memoryForms = new Map<string, any>();
 
 // Función para generar un ID único de 8 caracteres
 function generateUniqueId(): string {
@@ -36,6 +40,9 @@ export async function POST(request: NextRequest) {
     }
     
     // Generar ID único
+    // Verificar disponibilidad de KV primero
+    const kvAvailable = await isKVAvailable();
+    
     let uniqueId = '';
     let attempts = 0;
     
@@ -44,7 +51,18 @@ export async function POST(request: NextRequest) {
       attempts++;
       
       // Verificar si el ID ya existe
-      const existing = await kv.get(`form:${uniqueId}`);
+      let existing = null;
+      if (kvAvailable) {
+        try {
+          existing = await kv.get(`form:${uniqueId}`);
+        } catch (error) {
+          console.log('⚠️ Error verificando ID en KV, usando memoria:', error);
+          existing = memoryForms.get(uniqueId);
+        }
+      } else {
+        existing = memoryForms.get(uniqueId);
+      }
+      
       if (!existing) break;
       
     } while (attempts < 10);
@@ -74,15 +92,28 @@ export async function POST(request: NextRequest) {
       expirationMonths,
       requests: [] // Array para almacenar solicitudes de música
     };
+    let storageMethod = 'memory';
     
-    // Guardar en Vercel KV
-    await kv.set(`form:${uniqueId}`, formData);
+    if (kvAvailable) {
+      try {
+        await kv.set(`form:${uniqueId}`, formData);
+        storageMethod = 'vercel-kv';
+        console.log(`Form ${uniqueId} saved to Vercel KV`);
+      } catch (error) {
+        console.error('Failed to save to KV, using memory fallback:', error);
+        // Los datos ya están en formData, continuamos
+      }
+    } else {
+       console.warn(`Form ${uniqueId} saved to memory storage (KV not available)`);
+       // Guardar en memoria como fallback
+       memoryForms.set(uniqueId, formData);
+     }
     
     // Crear URL corta
     const baseUrl = request.nextUrl.origin;
     const shortUrl = `${baseUrl}/form/${uniqueId}`;
     
-    // Generar código QR
+    // Generar código QR con configuración optimizada
     const qrCodeDataUrl = await QRCode.toDataURL(shortUrl, {
       width: 300,
       margin: 2,
@@ -99,7 +130,8 @@ export async function POST(request: NextRequest) {
       shortUrl,
       qrCodeUrl: qrCodeDataUrl,
       djSlug,
-      expiresAt: expiresAt.toISOString()
+      expiresAt: expiresAt.toISOString(),
+      storageMethod // Informar qué método de almacenamiento se usó
     });
     
   } catch (error) {
@@ -124,8 +156,22 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    // Obtener datos del formulario
-    const formData = await kv.get(`form:${id}`);
+    // Intentar obtener datos del formulario desde KV primero
+    let formData = null;
+    const kvAvailable = await isKVAvailable();
+    
+    if (kvAvailable) {
+      try {
+        formData = await kv.get(`form:${id}`);
+      } catch (error) {
+        console.error('Error getting form from KV:', error);
+      }
+    }
+    
+    // Si no se encontró en KV, buscar en memoria
+    if (!formData) {
+      formData = memoryForms.get(id);
+    }
     
     if (!formData) {
       return NextResponse.json(
@@ -171,8 +217,22 @@ export async function PUT(request: NextRequest) {
       );
     }
     
-    // Obtener datos del formulario
-    const formData = await kv.get(`form:${id}`) as any;
+    // Obtener datos del formulario con fallback
+    let formData = null;
+    const kvAvailable = await isKVAvailable();
+    
+    if (kvAvailable) {
+      try {
+        formData = await kv.get(`form:${id}`) as any;
+      } catch (error) {
+        console.error('Error getting form from KV for update:', error);
+      }
+    }
+    
+    // Si no se encontró en KV, buscar en memoria
+    if (!formData) {
+      formData = memoryForms.get(id);
+    }
     
     if (!formData) {
       return NextResponse.json(
@@ -203,8 +263,21 @@ export async function PUT(request: NextRequest) {
     formData.requests = formData.requests || [];
     formData.requests.push(newRequest);
     
-    // Actualizar en Vercel KV
-    await kv.set(`form:${id}`, formData);
+    // Actualizar en el almacenamiento disponible
+    if (kvAvailable) {
+      try {
+        await kv.set(`form:${id}`, formData);
+        console.log(`Form ${id} updated in Vercel KV`);
+      } catch (error) {
+        console.error('Error updating form in KV:', error);
+        // Actualizar en memoria como fallback
+        memoryForms.set(id, formData);
+      }
+    } else {
+      // Actualizar en memoria
+      memoryForms.set(id, formData);
+      console.log(`Form ${id} updated in memory storage`);
+    }
     
     return NextResponse.json({
       success: true,

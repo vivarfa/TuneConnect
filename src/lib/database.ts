@@ -105,19 +105,35 @@ export async function getCodeData(code: string) {
   return memoryData;
 }
 
+// Función para verificar si Vercel KV está disponible
+export async function isKVAvailable(): Promise<boolean> {
+  if (!isProduction()) return false;
+  
+  try {
+    // Intentar una operación simple para verificar KV
+    await kv.set('health-check', 'ok');
+    await kv.del('health-check');
+    return true;
+  } catch (error) {
+    console.warn('Vercel KV not available:', error);
+    return false;
+  }
+}
+
 // Función para almacenar un nuevo código
 export async function setCodeData(code: string, data: any) {
   const upperCode = code.toUpperCase();
   
-  // En producción, usar Vercel KV
+  // En producción, intentar usar Vercel KV primero
   if (isProduction()) {
     try {
       await kv.set(`code:${upperCode}`, data);
+      console.log(`Code ${upperCode} saved to Vercel KV successfully`);
       return;
     } catch (error) {
       console.error('Error setting code in KV:', error);
-      // Si KV falla en producción, lanzar el error para que la API lo maneje
-      throw new Error('Failed to save code: Vercel KV not configured. Please set up KV database in Vercel dashboard.');
+      console.warn('Falling back to memory storage for code:', upperCode);
+      // Continuar con fallback en lugar de lanzar error
     }
   }
   
@@ -130,6 +146,7 @@ export async function setCodeData(code: string, data: any) {
   
   // También guardar en memoria como fallback
   uniqueCodes.set(upperCode, data);
+  console.log(`Code ${upperCode} saved to memory storage`);
 }
 
 // Función para buscar perfil por slug

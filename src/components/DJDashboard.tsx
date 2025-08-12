@@ -664,9 +664,7 @@ function SidebarNav({ activeTab, setActiveTab, djProfile, canNavigateToTab, isDa
                             <div className="absolute inset-0 bg-gradient-to-br from-green-500/20 to-emerald-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         </div>
                         <div className="flex-1 min-w-0 transition-all duration-300 group-hover:translate-x-1">
-                            <p className={`text-xs sm:text-sm font-medium truncate transition-colors duration-300 ${
-                                isDarkMode ? 'text-white group-hover:text-green-300' : 'text-gray-900 group-hover:text-green-600'
-                            }`}>
+                            <p className="text-xs sm:text-sm font-medium truncate transition-colors duration-300" style={{ color: '#ffffff' }}>
                                 {djProfile.djName || 'DJ Name'}
                             </p>
                             <p className={`text-xs truncate transition-colors duration-300 hidden lg:block ${
