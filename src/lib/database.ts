@@ -35,14 +35,7 @@ function saveToStorage(key: string, data: any) {
 }
 
 // Fallback en memoria para el servidor de desarrollo
-export const uniqueCodes = new Map<string, { 
-  djName: string, 
-  djSlug: string, 
-  djProfile: any, 
-  createdAt: Date,
-  expiresAt?: Date,
-  expirationMonths?: number
-}>();
+export const uniqueCodes = new Map<string, any>();
 
 export const djProfiles = new Map<string, any>();
 
@@ -113,7 +106,7 @@ export async function getCodeData(code: string) {
 }
 
 // Función para almacenar un nuevo código
-export async function setCodeData(code: string, data: { djName: string, djSlug: string, djProfile: any, createdAt: Date, expiresAt?: Date, expirationMonths?: number }) {
+export async function setCodeData(code: string, data: any) {
   const upperCode = code.toUpperCase();
   
   // En producción, usar Vercel KV
