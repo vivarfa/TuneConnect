@@ -51,7 +51,7 @@ function generateDefaultDjProfile(djId: string): DJProfile {
       animations: true,
     },
     payment: {
-      minTip: 9,
+      minTip: 1,
       paypalEnabled: true,
       paypalEmail: 'dj@example.com',
       paypalMeLink: 'https://paypal.me/djexample',

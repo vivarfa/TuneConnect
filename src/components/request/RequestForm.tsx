@@ -278,7 +278,7 @@ export function RequestForm({ djProfile, isPreview = false, customization: propC
                 </div>
                 <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">Monto de Propina</h3>
                 <div className="text-3xl sm:text-4xl font-bold text-green-400 mb-2">
-                  S/ {djProfile.payment?.minTip || 9}
+                  S/ {djProfile.payment?.minTip || 1}
                 </div>
                 <p className="text-sm sm:text-base text-white/60">
                   Envía exactamente esta cantidad

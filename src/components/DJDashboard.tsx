@@ -16,9 +16,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import Image from "next/image";
 import { DJProfile } from "@/lib/types";
-import { User, CreditCard, QrCode, Palette, Upload, ArrowRight, ArrowLeft, Moon, Sun, Type, Zap, Settings, Link, Copy, RefreshCw, Plus, Trash2, Eye, Edit, Camera, Phone, Mail, Globe, ChevronLeft, ChevronRight, Check, X, Download, Building2, RotateCcw, Save, Sparkles, ExternalLink } from "lucide-react";
+import { User, CreditCard, QrCode, Palette, Upload, ArrowRight, ArrowLeft, Moon, Sun, Type, Zap, Settings, Link, Copy, RefreshCw, Plus, Trash2, Eye, Edit, Camera, Phone, Mail, Globe, ChevronLeft, ChevronRight, Check, X, Download, Building2, RotateCcw, Save, Sparkles, ExternalLink, Clock, CalendarIcon } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Badge } from "./ui/badge";
 import { Separator } from "./ui/separator";
@@ -149,7 +151,7 @@ const initialDjProfile: DJProfile = {
     animations: true,
   },
   payment: {
-    minTip: 9,
+    minTip: 1,
     paypalEnabled: false,
     paypalEmail: '',
     paypalMeLink: '',
@@ -227,15 +229,37 @@ export default function DJDashboard() {
         }));
     };
 
-    const handleProfileImageSelect = (file: File) => {
+    const handleProfileImageSelect = async (file: File) => {
         setProfileImageFile(file);
+        
+        // Mostrar preview inmediato
         const reader = new FileReader();
         reader.onload = (e) => {
             const result = e.target?.result as string;
             setProfileImagePreview(result);
-            setDjProfile(prev => ({ ...prev, profilePictureUrl: result }));
         };
         reader.readAsDataURL(file);
+        
+        // Subir imagen al servidor
+        try {
+            const filename = `${Date.now()}-${file.name}`;
+            const response = await fetch(`/api/upload?filename=${encodeURIComponent(filename)}`, {
+                method: 'POST',
+                body: file,
+            });
+            
+            if (!response.ok) {
+                throw new Error('Error al subir la imagen');
+            }
+            
+            const blob = await response.json();
+            // Actualizar el perfil con la URL pública de la imagen
+            setDjProfile(prev => ({ ...prev, profilePictureUrl: blob.url }));
+            
+        } catch (error) {
+            console.error('Error uploading profile image:', error);
+            alert('Error al subir la imagen. Inténtalo de nuevo.');
+        }
     };
 
 const generateQrAndLink = async () => {
@@ -261,11 +285,11 @@ const generateQrAndLink = async () => {
         }
         setProgress(50);
         
-        // PASO 2: Ahora llamamos a la API para generar el código, enviando SOLO el nombre.
+        // PASO 2: Ahora llamamos a la API para generar el código, enviando el perfil completo.
         const response = await fetch('/api/generate-unique-code', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ djName: djProfile.djName }) // <-- ¡Solo el nombre!
+            body: JSON.stringify({ djName: djProfile.djName, djProfile: djProfile })
         });
         
         setProgress(80);
@@ -1249,15 +1273,37 @@ function PaymentSettings({ djProfile, onPaymentChange, onNext, onPrevious, isSte
         onPaymentChange('digitalWallets', updatedWallets);
     };
     
-    const handleQrImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleQrImageSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file && file.type.startsWith('image/')) {
+            // Mostrar preview inmediato
             const reader = new FileReader();
             reader.onload = (e) => {
                 const result = e.target?.result as string;
                 setQrPreview(result);
             };
             reader.readAsDataURL(file);
+            
+            // Subir imagen al servidor
+            try {
+                const filename = `${Date.now()}-${file.name}`;
+                const response = await fetch(`/api/upload?filename=${encodeURIComponent(filename)}`, {
+                    method: 'POST',
+                    body: file,
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Error al subir la imagen');
+                }
+                
+                const blob = await response.json();
+                // Actualizar el preview con la URL pública
+                setQrPreview(blob.url);
+                
+            } catch (error) {
+                console.error('Error uploading QR image:', error);
+                alert('Error al subir la imagen QR. Inténtalo de nuevo.');
+            }
         }
     };
     
@@ -1365,10 +1411,10 @@ function PaymentSettings({ djProfile, onPaymentChange, onNext, onPrevious, isSte
                             onBlur={(e) => {
                                 const value = parseInt(e.target.value);
                                 if (isNaN(value) || value < 1) {
-                                    onPaymentChange('minTip', 9);
+                                    onPaymentChange('minTip', 1);
                                 }
                             }}
-                            placeholder="9"
+                            placeholder="1"
                             className={`pl-8 sm:pl-12 text-base sm:text-lg font-bold text-center transition-all duration-300 hover:scale-105 focus:scale-105 ${
                                 isDarkMode 
                                     ? 'bg-gray-700/80 border-gray-500 text-white focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20' 
@@ -1384,9 +1430,7 @@ function PaymentSettings({ djProfile, onPaymentChange, onNext, onPrevious, isSte
                             mín.
                         </div>
                     </div>
-                    <p className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} text-center`}>
-                        Este será el monto mínimo que tus fans pueden enviarte como propina
-                    </p>
+
                 </div>
                 
                 {/* Configuración personalizada de país */}
@@ -2403,7 +2447,7 @@ function PreviewPage({ djProfile, onNext, onPrevious, isDarkMode }: {
                                         }}>
                                             <div className="text-center">
                                                 <p className="text-sm opacity-70" style={{ color: customization.textColor }}>Monto de propina</p>
-                                                <p className="text-2xl font-bold" style={{ color: customization.primaryColor }}>S/{djProfile.payment?.minTip || '10'}</p>
+                                                <p className="text-2xl font-bold" style={{ color: customization.primaryColor }}>S/{djProfile.payment?.minTip || '1'}</p>
                                                 <p className="text-xs opacity-60 mt-1" style={{ color: customization.textColor }}>Envía exactamente esta cantidad</p>
                                             </div>
                                         </div>
@@ -2808,6 +2852,9 @@ function QrCodeSection({ djProfile, onPrevious, isDarkMode }: {
     const [qrCodeUrl, setQrCodeUrl] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
     const [copied, setCopied] = useState(false);
+    const [expirationMonths, setExpirationMonths] = useState(6);
+    const [customExpirationDate, setCustomExpirationDate] = useState<Date | undefined>(undefined);
+    const [useCustomDate, setUseCustomDate] = useState(false);
     
     // Generar código QR único
     const generateQrCode = async () => {
@@ -2821,7 +2868,10 @@ function QrCodeSection({ djProfile, onPrevious, isDarkMode }: {
                 },
                 body: JSON.stringify({ 
                     djName: djProfile.djName,
-                    djProfile: djProfile 
+                    djProfile: djProfile,
+                    expirationMonths: useCustomDate && customExpirationDate 
+                        ? Math.ceil((customExpirationDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24 * 30))
+                        : expirationMonths
                 })
             });
             
@@ -2870,11 +2920,7 @@ function QrCodeSection({ djProfile, onPrevious, isDarkMode }: {
         }
     };
     
-    useEffect(() => {
-        if (djProfile.djName) {
-            generateQrCode();
-        }
-    }, [djProfile.djName]);
+    // El QR se genera solo cuando el usuario presiona el botón
     
     return (
         <Card className={`max-w-4xl mx-auto ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white'}`}>
@@ -2887,6 +2933,101 @@ function QrCodeSection({ djProfile, onPrevious, isDarkMode }: {
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+                {/* Selector de período de expiración */}
+                <div className="space-y-4">
+                    <Label className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Período de expiración</Label>
+                    
+                    {/* Opciones rápidas */}
+                    <div className="grid grid-cols-2 gap-3">
+                        <Button
+                            variant={!useCustomDate && expirationMonths === 6 ? 'default' : 'outline'}
+                            onClick={() => {
+                                setUseCustomDate(false);
+                                setExpirationMonths(6);
+                            }}
+                            className={`flex items-center gap-2 ${!useCustomDate && expirationMonths === 6 ? 'bg-blue-600 hover:bg-blue-700' : ''}`}
+                        >
+                            <Clock className="w-4 h-4" /> 6 meses
+                        </Button>
+                        <Button
+                            variant={!useCustomDate && expirationMonths === 12 ? 'default' : 'outline'}
+                            onClick={() => {
+                                setUseCustomDate(false);
+                                setExpirationMonths(12);
+                            }}
+                            className={`flex items-center gap-2 ${!useCustomDate && expirationMonths === 12 ? 'bg-blue-600 hover:bg-blue-700' : ''}`}
+                        >
+                            <Clock className="w-4 h-4" /> 12 meses
+                        </Button>
+                    </div>
+                    
+                    {/* Selector de fecha personalizada */}
+                    <div className="space-y-3">
+                        <div className="flex items-center space-x-2">
+                            <Switch
+                                checked={useCustomDate}
+                                onCheckedChange={setUseCustomDate}
+                            />
+                            <Label className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                                Seleccionar fecha personalizada
+                            </Label>
+                        </div>
+                        
+                        {useCustomDate && (
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        className={`w-full justify-start text-left font-normal ${isDarkMode ? 'border-gray-600 text-black hover:bg-gray-700' : 'text-black'}`}
+                                    >
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        {customExpirationDate ? customExpirationDate.toLocaleDateString('es-ES') : "Seleccionar fecha de expiración"}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                        mode="single"
+                                        selected={customExpirationDate}
+                                        onSelect={setCustomExpirationDate}
+                                        disabled={(date) => {
+                                            const today = new Date();
+                                            const maxDate = new Date();
+                                            maxDate.setMonth(today.getMonth() + 12);
+                                            return date < today || date > maxDate;
+                                        }}
+                                        initialFocus
+                                    />
+                                </PopoverContent>
+                            </Popover>
+                        )}
+                    </div>
+                    
+                    <div className={`p-3 rounded-lg text-sm ${isDarkMode ? 'bg-yellow-900/30 text-yellow-300' : 'bg-yellow-50 text-yellow-700'}`}>
+                        <p className="font-medium mb-1">⏰ Expiración automática</p>
+                        <p>
+                            {useCustomDate && customExpirationDate 
+                                ? `El código QR expirará el ${customExpirationDate.toLocaleDateString('es-ES')}`
+                                : `El código QR y formulario se deshabilitarán automáticamente después de ${expirationMonths} meses`
+                            } para optimizar el almacenamiento.
+                        </p>
+                    </div>
+                    
+                    {/* Botón para generar QR */}
+                    <Button
+                        onClick={generateQrCode}
+                        disabled={isGenerating || !djProfile.djName || (useCustomDate && !customExpirationDate)}
+                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                        size="lg"
+                    >
+                        {isGenerating ? (
+                            <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
+                        ) : (
+                            <QrCode className="w-5 h-5 mr-2" />
+                        )}
+                        {isGenerating ? 'Generando...' : 'Generar QR y Link'}
+                    </Button>
+                </div>
+                
                 {/* URL del perfil */}
                 <div className="space-y-3">
                     <Label className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Link corto único</Label>

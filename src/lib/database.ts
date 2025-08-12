@@ -39,7 +39,9 @@ export const uniqueCodes = new Map<string, {
   djName: string, 
   djSlug: string, 
   djProfile: any, 
-  createdAt: Date 
+  createdAt: Date,
+  expiresAt?: Date,
+  expirationMonths?: number
 }>();
 
 export const djProfiles = new Map<string, any>();
@@ -53,10 +55,20 @@ export async function getCodeData(code: string) {
     try {
       const data = await kv.get(`code:${upperCode}`);
       if (data) {
-        return {
+        const codeData = {
           ...data,
-          createdAt: new Date((data as any).createdAt)
+          createdAt: new Date((data as any).createdAt),
+          expiresAt: (data as any).expiresAt ? new Date((data as any).expiresAt) : undefined
         };
+        
+        // Verificar si el código ha expirado
+        if (codeData.expiresAt && new Date() > codeData.expiresAt) {
+          // Código expirado, eliminarlo automáticamente
+          await kv.del(`code:${upperCode}`);
+          return null;
+        }
+        
+        return codeData;
       }
     } catch (error) {
       console.error('Error getting code from KV:', error);
@@ -68,19 +80,40 @@ export async function getCodeData(code: string) {
   if (isClient()) {
     const storedCodes = getFromStorage('uniqueCodes') || {};
     if (storedCodes[upperCode]) {
-      return {
+      const codeData = {
         ...storedCodes[upperCode],
-        createdAt: new Date(storedCodes[upperCode].createdAt)
+        createdAt: new Date(storedCodes[upperCode].createdAt),
+        expiresAt: storedCodes[upperCode].expiresAt ? new Date(storedCodes[upperCode].expiresAt) : undefined
       };
+      
+      // Verificar si el código ha expirado
+      if (codeData.expiresAt && new Date() > codeData.expiresAt) {
+        // Código expirado, eliminarlo del localStorage
+        delete storedCodes[upperCode];
+        saveToStorage('uniqueCodes', storedCodes);
+        return null;
+      }
+      
+      return codeData;
     }
   }
   
   // Fallback a memoria
-  return uniqueCodes.get(upperCode);
+  const memoryData = uniqueCodes.get(upperCode);
+  if (memoryData) {
+    // Verificar si el código ha expirado
+    if (memoryData.expiresAt && new Date() > memoryData.expiresAt) {
+      // Código expirado, eliminarlo de memoria
+      uniqueCodes.delete(upperCode);
+      return null;
+    }
+  }
+  
+  return memoryData;
 }
 
 // Función para almacenar un nuevo código
-export async function setCodeData(code: string, data: { djName: string, djSlug: string, djProfile: any, createdAt: Date }) {
+export async function setCodeData(code: string, data: { djName: string, djSlug: string, djProfile: any, createdAt: Date, expiresAt?: Date, expirationMonths?: number }) {
   const upperCode = code.toUpperCase();
   
   // En producción, usar Vercel KV
@@ -274,4 +307,72 @@ export async function codeExists(code: string): Promise<boolean> {
   
   // Fallback a memoria
   return uniqueCodes.has(upperCode);
+}
+
+// Función para purgar códigos expirados (útil para mantenimiento)
+export async function purgeExpiredCodes(): Promise<{ deleted: number, errors: string[] }> {
+  let deletedCount = 0;
+  const errors: string[] = [];
+  
+  // En producción, usar Vercel KV
+  if (isProduction()) {
+    try {
+      const keys = await kv.keys('code:*');
+      const now = new Date();
+      
+      for (const key of keys) {
+        try {
+          const data = await kv.get(key);
+          if (data && (data as any).expiresAt) {
+            const expiresAt = new Date((data as any).expiresAt);
+            if (now > expiresAt) {
+              await kv.del(key);
+              deletedCount++;
+            }
+          }
+        } catch (error) {
+          errors.push(`Error processing ${key}: ${error}`);
+        }
+      }
+    } catch (error) {
+      errors.push(`Error accessing KV: ${error}`);
+    }
+  }
+  
+  // En desarrollo, limpiar localStorage
+  if (isClient()) {
+    const storedCodes = getFromStorage('uniqueCodes') || {};
+    const now = new Date();
+    let localDeleted = 0;
+    
+    for (const [code, data] of Object.entries(storedCodes)) {
+      if ((data as any).expiresAt) {
+        const expiresAt = new Date((data as any).expiresAt);
+        if (now > expiresAt) {
+          delete storedCodes[code];
+          localDeleted++;
+        }
+      }
+    }
+    
+    if (localDeleted > 0) {
+      saveToStorage('uniqueCodes', storedCodes);
+      deletedCount += localDeleted;
+    }
+  }
+  
+  // Limpiar memoria
+  const now = new Date();
+  let memoryDeleted = 0;
+  
+  for (const [code, data] of uniqueCodes.entries()) {
+    if (data.expiresAt && now > data.expiresAt) {
+      uniqueCodes.delete(code);
+      memoryDeleted++;
+    }
+  }
+  
+  deletedCount += memoryDeleted;
+  
+  return { deleted: deletedCount, errors };
 }

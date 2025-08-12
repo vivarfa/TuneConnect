@@ -8,9 +8,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { QrCode, Type, Link, Camera, Upload, Download, Copy, RefreshCw, Home, ArrowLeft, Image, Facebook, Twitter, MessageCircle, Share2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { QrCode, Type, Link, Camera, Upload, Download, Copy, RefreshCw, Home, ArrowLeft, Image, Facebook, Twitter, MessageCircle, Share2, CalendarIcon, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import QRCode from "qrcode";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 export default function QrConverterPage() {
     const router = useRouter();
@@ -26,6 +31,16 @@ export default function QrConverterPage() {
     const [errorCorrectionLevel, setErrorCorrectionLevel] = useState('M');
     const [qrColor, setQrColor] = useState('#000000');
     const [backgroundColor, setBackgroundColor] = useState('#FFFFFF');
+    
+    // Estados para período de expiración
+    const [expirationMonths, setExpirationMonths] = useState(6);
+    const [useCustomDate, setUseCustomDate] = useState(false);
+    const [customExpirationDate, setCustomExpirationDate] = useState<Date | undefined>(undefined);
+    const [calendarOpen, setCalendarOpen] = useState(false);
+    
+    // Calcular fecha máxima (12 meses desde hoy)
+    const maxDate = new Date();
+    maxDate.setMonth(maxDate.getMonth() + 12);
     
     // Función para subir imagen y obtener URL pública
     const uploadImageToBlob = async (file: File): Promise<string> => {
@@ -86,11 +101,45 @@ export default function QrConverterPage() {
                 return;
             }
             
-            // Guardar el contenido original
-            setOriginalContent(dataToEncode);
+            // Calcular expiración
+            const calculatedExpirationMonths = useCustomDate && customExpirationDate 
+                ? Math.ceil((customExpirationDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24 * 30))
+                : expirationMonths;
             
-            // Generar QR usando la librería qrcode
-            const qrDataUrl = await QRCode.toDataURL(dataToEncode, {
+            // Generar código único y almacenar en la base de datos
+            const codeResponse = await fetch('/api/generate-unique-code', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    originalContent: dataToEncode,
+                    contentType: inputType,
+                    expirationMonths: calculatedExpirationMonths,
+                    qrSettings: {
+                        size: qrSize,
+                        errorCorrectionLevel,
+                        color: qrColor,
+                        backgroundColor
+                    }
+                }),
+            });
+            
+            if (!codeResponse.ok) {
+                throw new Error('Error al generar código único');
+            }
+            
+            const codeData = await codeResponse.json();
+            const uniqueCode = codeData.code;
+            
+            // Crear URL del código único
+            const uniqueUrl = `${window.location.origin}/r/${uniqueCode}`;
+            
+            // Guardar el contenido original para mostrar
+            setOriginalContent(uniqueUrl);
+            
+            // Generar QR usando la URL única
+            const qrDataUrl = await QRCode.toDataURL(uniqueUrl, {
                 width: qrSize,
                 margin: 2,
                 color: {
@@ -360,6 +409,99 @@ export default function QrConverterPage() {
                                                     className="flex-1 bg-white/90 border-gray-300 text-gray-900 transition-all duration-300 hover:bg-white"
                                                 />
                                             </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Período de expiración */}
+                                    <div className="space-y-4 animate-fade-in-up delay-1000">
+                                        <Label className="text-sm text-white font-semibold flex items-center gap-2">
+                                            <Clock className="w-4 h-4" />
+                                            Período de expiración
+                                        </Label>
+                                        
+                                        {/* Opciones rápidas */}
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <Button
+                                                type="button"
+                                                variant={!useCustomDate && expirationMonths === 6 ? "default" : "outline"}
+                                                onClick={() => {
+                                                    setUseCustomDate(false);
+                                                    setExpirationMonths(6);
+                                                }}
+                                                className={`h-10 transition-all duration-300 ${
+                                                    !useCustomDate && expirationMonths === 6
+                                                        ? "bg-blue-600 hover:bg-blue-700 text-white"
+                                                        : "border-gray-300 bg-white/90 text-gray-900 hover:bg-gray-100"
+                                                }`}
+                                            >
+                                                6 meses
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                variant={!useCustomDate && expirationMonths === 12 ? "default" : "outline"}
+                                                onClick={() => {
+                                                    setUseCustomDate(false);
+                                                    setExpirationMonths(12);
+                                                }}
+                                                className={`h-10 transition-all duration-300 ${
+                                                    !useCustomDate && expirationMonths === 12
+                                                        ? "bg-blue-600 hover:bg-blue-700 text-white"
+                                                        : "border-gray-300 bg-white/90 text-gray-900 hover:bg-gray-100"
+                                                }`}
+                                            >
+                                                12 meses
+                                            </Button>
+                                        </div>
+                                        
+                                        {/* Toggle para fecha personalizada */}
+                                        <div className="flex items-center justify-between p-3 bg-white/10 rounded-lg border border-white/20">
+                                            <Label className="text-sm text-white font-medium">Usar fecha personalizada</Label>
+                                            <Switch
+                                                checked={useCustomDate}
+                                                onCheckedChange={(checked) => {
+                                                    setUseCustomDate(checked);
+                                                    if (!checked) {
+                                                        setCustomExpirationDate(undefined);
+                                                    }
+                                                }}
+                                            />
+                                        </div>
+                                        
+                                        {/* Selector de fecha personalizada */}
+                                        {useCustomDate && (
+                                            <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                                                <PopoverTrigger asChild>
+                                                    <Button
+                                                        variant="outline"
+                                                        className="w-full justify-start text-left font-normal bg-white/90 border-gray-300 text-gray-900 hover:bg-gray-100"
+                                                    >
+                                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                                        {customExpirationDate
+                                                            ? format(customExpirationDate, "PPP", { locale: es })
+                                                            : "Seleccionar fecha de expiración"}
+                                                    </Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0" align="start">
+                                                    <Calendar
+                                                        mode="single"
+                                                        selected={customExpirationDate}
+                                                        onSelect={(date) => {
+                                                            setCustomExpirationDate(date);
+                                                            setCalendarOpen(false);
+                                                        }}
+                                                        disabled={(date) => date < new Date() || date > maxDate}
+                                                        initialFocus
+                                                    />
+                                                </PopoverContent>
+                                            </Popover>
+                                        )}
+                                        
+                                        {/* Información de expiración */}
+                                        <div className="text-xs text-gray-300 bg-white/5 p-2 rounded border border-white/10">
+                                            {useCustomDate && customExpirationDate
+                                                ? `Expira el: ${format(customExpirationDate, "PPP", { locale: es })}`
+                                                : `Expira en: ${expirationMonths} ${expirationMonths === 1 ? 'mes' : 'meses'}`
+                                            }
                                         </div>
                                     </div>
                                 </div>

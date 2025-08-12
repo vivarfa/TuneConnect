@@ -24,11 +24,55 @@ function createDjSlug(djName: string): string {
 
 export async function POST(request: NextRequest) {
   try {
-    const { djName } = await request.json();
+    const { 
+      djName, 
+      djProfile, 
+      expirationMonths = 6,
+      // Nuevos campos para el convertidor QR
+      originalContent,
+      contentType,
+      qrSettings
+    } = await request.json();
     
-    if (!djName || typeof djName !== 'string' || djName.trim().length === 0) {
+    // Determinar si es para DJ o para convertidor QR
+    const isQrConverter = originalContent && contentType;
+    
+    if (isQrConverter) {
+      // Validación para convertidor QR
+      if (!originalContent || typeof originalContent !== 'string' || originalContent.trim().length === 0) {
+        return NextResponse.json(
+          { error: 'Contenido original es requerido' },
+          { status: 400 }
+        );
+      }
+      
+      if (!['text', 'url', 'image'].includes(contentType)) {
+        return NextResponse.json(
+          { error: 'Tipo de contenido debe ser text, url o image' },
+          { status: 400 }
+        );
+      }
+    } else {
+      // Validación para DJ
+      if (!djName || typeof djName !== 'string' || djName.trim().length === 0) {
+        return NextResponse.json(
+          { error: 'Nombre del DJ es requerido' },
+          { status: 400 }
+        );
+      }
+      
+      if (!djProfile) {
+        return NextResponse.json(
+          { error: 'Perfil del DJ es requerido' },
+          { status: 400 }
+        );
+      }
+    }
+    
+    // Validar período de expiración (6 o 12 meses)
+    if (![6, 12].includes(expirationMonths)) {
       return NextResponse.json(
-        { error: 'Nombre del DJ es requerido' },
+        { error: 'El período de expiración debe ser 6 o 12 meses' },
         { status: 400 }
       );
     }
@@ -49,40 +93,92 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const djSlug = createDjSlug(djName.trim());
+    // Calcular fecha de expiración
+    const createdAt = new Date();
+    const expiresAt = new Date(createdAt);
+    expiresAt.setMonth(expiresAt.getMonth() + expirationMonths);
     
-    // Almacenar solo la referencia del código al slug del DJ (no todo el perfil)
-    await setCodeData(uniqueCode, {
-      djName: djName.trim(),
-      djSlug,
-      djProfile: null, // No almacenamos el perfil completo aquí
-      createdAt: new Date()
-    });
-    
-    // Construir URLs
     const baseUrl = request.nextUrl.origin;
-    const requestUrl = `${baseUrl}/request/${djSlug}`;
-    const shortUrl = `${baseUrl}/r/${uniqueCode}`;
+    let dataToStore: any;
+    let responseData: any;
     
-    // Generar QR usando la librería qrcode (solo con la URL corta)
-    const qrCodeDataUrl = await QRCode.toDataURL(shortUrl, {
-      width: 300,
-      margin: 2,
-      color: {
-        dark: '#000000',
-        light: '#FFFFFF'
-      },
-      errorCorrectionLevel: 'M'
-    });
+    if (isQrConverter) {
+      // Para convertidor QR
+      dataToStore = {
+        type: 'qr-converter',
+        originalContent: originalContent.trim(),
+        contentType,
+        qrSettings: qrSettings || {},
+        createdAt,
+        expiresAt,
+        expirationMonths
+      };
+      
+      const shortUrl = `${baseUrl}/qr/${uniqueCode}`;
+      
+      // Generar QR con configuraciones personalizadas
+      const qrOptions = {
+        width: qrSettings?.size || 256,
+        margin: 2,
+        color: {
+          dark: qrSettings?.foregroundColor || '#000000',
+          light: qrSettings?.backgroundColor || '#FFFFFF'
+        },
+        errorCorrectionLevel: qrSettings?.errorCorrectionLevel || 'M'
+      };
+      
+      const qrCodeDataUrl = await QRCode.toDataURL(shortUrl, qrOptions);
+      
+      responseData = {
+        success: true,
+        uniqueCode,
+        shortUrl,
+        qrCodeUrl: qrCodeDataUrl,
+        originalContent: originalContent.trim(),
+        contentType
+      };
+    } else {
+      // Para DJ (lógica original)
+      const djSlug = createDjSlug(djName.trim());
+      
+      dataToStore = {
+        type: 'dj-profile',
+        djName: djName.trim(),
+        djSlug,
+        djProfile: djProfile,
+        createdAt,
+        expiresAt,
+        expirationMonths
+      };
+      
+      const requestUrl = `${baseUrl}/request/${djSlug}`;
+      const shortUrl = `${baseUrl}/r/${uniqueCode}`;
+      
+      // Generar QR usando la librería qrcode (solo con la URL corta)
+      const qrCodeDataUrl = await QRCode.toDataURL(shortUrl, {
+        width: 300,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        },
+        errorCorrectionLevel: 'M'
+      });
+      
+      responseData = {
+        success: true,
+        uniqueCode,
+        djSlug,
+        requestUrl,
+        shortUrl,
+        qrCodeUrl: qrCodeDataUrl
+      };
+    }
     
-    return NextResponse.json({
-      success: true,
-      uniqueCode,
-      djSlug,
-      requestUrl,
-      shortUrl,
-      qrCodeUrl: qrCodeDataUrl
-    });
+    // Almacenar el código
+    await setCodeData(uniqueCode, dataToStore);
+    
+    return NextResponse.json(responseData);
     
   } catch (error) {
     console.error('Error generando código único:', error);
