@@ -130,26 +130,14 @@ export default function QrConverterPage() {
             }
             
             const codeData = await codeResponse.json();
-            const uniqueCode = codeData.code;
             
-            // Crear URL del código único
-            const uniqueUrl = `${window.location.origin}/r/${uniqueCode}`;
+            if (!codeData.success || !codeData.uniqueCode) {
+                throw new Error('Error en la respuesta del servidor');
+            }
             
-            // Guardar el contenido original para mostrar
-            setOriginalContent(uniqueUrl);
-            
-            // Generar QR usando la URL única
-            const qrDataUrl = await QRCode.toDataURL(uniqueUrl, {
-                width: qrSize,
-                margin: 2,
-                color: {
-                    dark: qrColor,
-                    light: backgroundColor
-                },
-                errorCorrectionLevel: errorCorrectionLevel as 'L' | 'M' | 'Q' | 'H'
-            });
-            
-            setQrCodeUrl(qrDataUrl);
+            // Usar el QR y URL que ya vienen de la API
+            setOriginalContent(codeData.shortUrl);
+            setQrCodeUrl(codeData.qrCodeUrl);
             
         } catch (error) {
             console.error('Error generando QR:', error);
