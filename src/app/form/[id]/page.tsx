@@ -401,34 +401,50 @@ export default function DynamicFormPage() {
       {/* Fondo interactivo con partículas */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="particles-container">
-          {[...Array(50)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute w-1 h-1 rounded-full opacity-30 animate-pulse"
-              style={{
-                backgroundColor: themeColors.primary,
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 20}s`,
-                animationDuration: `${15 + Math.random() * 10}s`
-              }}
-            />
-          ))}
+          {[...Array(80)].map((_, i) => {
+            const size = Math.random() * 3 + 1; // Tamaños variados entre 1-4px
+            const opacity = Math.random() * 0.4 + 0.1; // Opacidad entre 0.1-0.5
+            return (
+              <div
+                key={i}
+                className="absolute rounded-full"
+                style={{
+                  width: `${size}px`,
+                  height: `${size}px`,
+                  backgroundColor: themeColors.primary,
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  opacity: opacity,
+                  animationDelay: `${Math.random() * 20}s`,
+                  animationDuration: `${15 + Math.random() * 15}s`,
+                  boxShadow: `0 0 ${size * 2}px ${themeColors.primary}40`
+                }}
+              />
+            );
+          })}
         </div>
       </div>
       
       {/* Efecto de iluminación del mouse */}
       <div 
-        className="absolute inset-0 pointer-events-none transition-opacity duration-300"
+        className="absolute inset-0 pointer-events-none transition-all duration-500 ease-out"
         style={{
-          background: `radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), ${themeColors.primary}15, transparent 40%)`
+          background: `radial-gradient(800px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), ${themeColors.primary}25, ${themeColors.primary}10 30%, transparent 60%)`
+        }}
+      />
+      
+      {/* Segundo efecto de brillo más sutil */}
+      <div 
+        className="absolute inset-0 pointer-events-none transition-all duration-700 ease-out"
+        style={{
+          background: `radial-gradient(1200px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), ${themeColors.primary}08, transparent 50%)`
         }}
       />
       
       <div className="max-w-sm sm:max-w-md md:max-w-lg lg:max-w-2xl xl:max-w-3xl mx-auto relative z-10">
         {/* Header del DJ */}
         <Card 
-          className={`mb-4 sm:mb-6 card-hover animate-slide-in transform transition-all duration-500 hover:shadow-2xl hover:scale-[1.02] ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white'}`}
+          className={`mb-4 sm:mb-6 card-hover animate-slide-in transform transition-all duration-500 hover:shadow-2xl hover:scale-[1.02] ${isDarkMode ? 'bg-gray-800/90 border-gray-700' : 'bg-white/10 backdrop-blur-md border-white/20'}`}
           style={customization ? {
             borderRadius: `${customization.borderRadius}px`
           } : {}}
@@ -472,7 +488,7 @@ export default function DynamicFormPage() {
 
         {/* Formulario de solicitud con pasos */}
         <Card 
-          className={`card-hover animate-slide-in transform transition-all duration-500 hover:shadow-2xl hover:scale-[1.01] ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white'} overflow-hidden`}
+          className={`card-hover animate-slide-in transform transition-all duration-500 hover:shadow-2xl hover:scale-[1.01] ${isDarkMode ? 'bg-gray-800/90 border-gray-700' : 'bg-white/10 backdrop-blur-md border-white/20'} overflow-hidden`}
           style={customization ? {
             borderRadius: `${customization.borderRadius}px`
           } : {}}
