@@ -504,22 +504,22 @@ export default function DynamicFormPage() {
             <CardHeader className="pb-3 sm:pb-4 px-4 sm:px-6">
               <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-3 sm:gap-0 text-center sm:text-left">
                 <div>
-                  <CardTitle className={`flex items-center justify-center sm:justify-start gap-2 text-lg sm:text-xl ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  <CardTitle className={`flex items-center justify-center sm:justify-start gap-2 text-lg sm:text-xl ${isDarkMode ? 'text-white' : 'text-white'}`}>
                     {currentStep === 1 && <Music className="w-5 h-5" />}
                     {currentStep === 2 && <DollarSign className="w-5 h-5" />}
                     {currentStep === 3 && <Upload className="w-5 h-5" />}
                     {currentStep === 4 && <MessageCircle className="w-5 h-5" />}
                     {stepTitles[currentStep - 1]}
                   </CardTitle>
-                  <CardDescription className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
+                  <CardDescription className={isDarkMode ? 'text-gray-300' : 'text-gray-200'}>
                     Paso {currentStep} de {totalSteps}
                   </CardDescription>
                 </div>
                 <div className="text-right">
-                  <div className={`text-xl sm:text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  <div className={`text-xl sm:text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-white'}`}>
                     {Math.round((currentStep / totalSteps) * 100)}%
                   </div>
-                  <div className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                  <div className={`text-xs ${isDarkMode ? 'text-white' : 'text-white'}`}>
                     Completado
                   </div>
                 </div>
@@ -536,17 +536,17 @@ export default function DynamicFormPage() {
                     <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 rounded-full flex items-center justify-center transform transition-all duration-300 hover:scale-110 hover:rotate-12" style={{ backgroundColor: `${themeColors.primary}20` }}>
                       <Music className="w-8 h-8" style={{ color: themeColors.primary }} />
                     </div>
-                    <h3 className={`text-base sm:text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} transition-all duration-300 hover:scale-105`}>
+                    <h3 className={`text-base sm:text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-white'} transition-all duration-300 hover:scale-105`}>
                       ¿Qué canción quieres escuchar?
                     </h3>
-                    <p className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <p className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-200'}`}>
                       Completa la información de tu canción favorita
                     </p>
                   </div>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div className="space-y-2 transform transition-all duration-300 hover:scale-105">
-                      <Label className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'} transition-colors duration-200`}>Nombre de la canción *</Label>
+                      <Label className={`font-medium ${isDarkMode ? 'text-white' : 'text-white'} transition-colors duration-200`}>Nombre de la canción *</Label>
                       <Input
                         value={musicRequest.songName}
                         onChange={(e) => handleInputChange('songName', e.target.value)}
@@ -564,7 +564,7 @@ export default function DynamicFormPage() {
                     </div>
                     
                     <div className="space-y-2 transform transition-all duration-300 hover:scale-105">
-                      <Label className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'} transition-colors duration-200`}>Artista *</Label>
+                      <Label className={`font-medium ${isDarkMode ? 'text-white' : 'text-white'} transition-colors duration-200`}>Artista *</Label>
                       <Input
                         value={musicRequest.artistName}
                         onChange={(e) => handleInputChange('artistName', e.target.value)}
@@ -583,7 +583,7 @@ export default function DynamicFormPage() {
                   </div>
                   
                   <div className="space-y-2 transform transition-all duration-300 hover:scale-105">
-                    <Label className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'} transition-colors duration-200`}>Género *</Label>
+                    <Label className={`font-medium ${isDarkMode ? 'text-white' : 'text-white'} transition-colors duration-200`}>Género *</Label>
                     <Select value={musicRequest.genre} onValueChange={(value) => handleInputChange('genre', value)}>
                       <SelectTrigger 
                         className={`h-10 sm:h-12 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] focus:scale-[1.02] focus:shadow-xl ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
@@ -606,7 +606,7 @@ export default function DynamicFormPage() {
                   </div>
                   
                   <div className="space-y-2 transform transition-all duration-300 hover:scale-105">
-                    <Label className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'} transition-colors duration-200`}>Tu nombre *</Label>
+                    <Label className={`font-medium ${isDarkMode ? 'text-white' : 'text-white'} transition-colors duration-200`}>Tu nombre *</Label>
                     <Input
                       value={musicRequest.requesterName}
                       onChange={(e) => handleInputChange('requesterName', e.target.value)}
@@ -655,27 +655,27 @@ export default function DynamicFormPage() {
                         {currencySymbol}
                       </div>
                     </div>
-                    <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-white'}`}>
                       Información de Pago
                     </h3>
-                    <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-200'}`}>
                       Selecciona tu método de pago preferido
                     </p>
                   </div>
 
                   {/* Monto de propina - Mostrar primero */}
                   <div className="text-center space-y-4 mb-6 relative z-10">
-                    <div className={`p-6 rounded-xl border-2 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'}`}
+                    <div className={`p-6 rounded-xl border-2 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-gray-800/90 border-gray-700' : 'bg-white/10 backdrop-blur-md border-white/20'}`}
                          style={{ 
                            boxShadow: `0 8px 32px ${themeColors.primary}20`
                          }}>
-                      <h3 className={`text-lg font-semibold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      <h3 className={`text-lg font-semibold mb-2 ${isDarkMode ? 'text-white' : 'text-white'}`}>
                         Monto de Propina
                       </h3>
                       <div className="text-4xl font-bold" style={{ color: '#ffffff' }}>
                         {currencySymbol}{djProfile.payment?.minTip || '5'}
                       </div>
-                      <p className={`text-sm mt-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                      <p className={`text-sm mt-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-200'}`}>
                         Propina sugerida para tu solicitud
                       </p>
                       <Input
@@ -701,14 +701,14 @@ export default function DynamicFormPage() {
                       </Avatar>
                       <div className="absolute inset-0 rounded-full bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
                     </div>
-                    <h4 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    <h4 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-white'}`}>
                       {djProfile.djName}
                     </h4>
                   </div>
 
                   <div className="space-y-6 relative z-10">
                     <div className="space-y-2">
-                      <Label className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Método de pago *</Label>
+                      <Label className={`font-medium ${isDarkMode ? 'text-white' : 'text-white'}`}>Método de pago *</Label>
                       <Select value={musicRequest.selectedWallet} onValueChange={(value) => {
                         handleInputChange('selectedWallet', value);
                         const tipAmount = djProfile?.payment?.minTip || '5';
@@ -752,10 +752,10 @@ export default function DynamicFormPage() {
                                  style={{ backgroundColor: '#0070ba' }}>
                               <CreditCard className="w-8 h-8 text-white" />
                             </div>
-                            <h4 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                            <h4 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-white'}`}>
                               PayPal
                             </h4>
-                            <p className={`text-sm ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                            <p className={`text-sm ${isDarkMode ? 'text-gray-200' : 'text-gray-200'}`}>
                               Email: {djProfile.payment?.paypalEmail}
                             </p>
                             {djProfile.payment?.paypalMeLink && (
@@ -782,10 +782,10 @@ export default function DynamicFormPage() {
                                      style={{ backgroundColor: themeColors.primary }}>
                                   <CreditCard className="w-8 h-8 text-white" />
                                 </div>
-                                <h4 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                                <h4 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-white'}`}>
                                   {selectedWalletData.name}
                                 </h4>
-                                <p className={`text-sm ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                                <p className={`text-sm ${isDarkMode ? 'text-gray-200' : 'text-gray-200'}`}>
                                   Cuenta: {selectedWalletData.account}
                                 </p>
                                 {selectedWalletData.qrCodeUrl && (
@@ -797,7 +797,7 @@ export default function DynamicFormPage() {
                                         className="w-48 h-48 mx-auto rounded-lg"
                                       />
                                     </div>
-                                    <p className={`text-xs mt-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                                    <p className={`text-xs mt-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-200'}`}>
                                       Escanea este código QR para realizar el pago
                                     </p>
                                   </div>
@@ -821,10 +821,10 @@ export default function DynamicFormPage() {
                     <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ backgroundColor: `${themeColors.primary}20` }}>
                       <MessageCircle className="w-8 h-8" style={{ color: themeColors.primary }} />
                     </div>
-                    <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-white'}`}>
                       Enviar Solicitud por WhatsApp
                     </h3>
-                    <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-200'}`}>
                       Sube tu comprobante de pago para verificar la transacción
                     </p>
                   </div>
@@ -859,7 +859,7 @@ export default function DynamicFormPage() {
                               <p className={`text-lg font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                                 {uploadingProof ? 'Subiendo...' : 'Seleccionar archivo'}
                               </p>
-                              <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                              <p className={`text-sm ${isDarkMode ? 'text-white' : 'text-white'}`}>
                                 PNG, JPG hasta 10MB
                               </p>
                             </div>
@@ -886,7 +886,7 @@ export default function DynamicFormPage() {
                         </div>
                         <div className="text-center">
                           <CheckCircle className="w-8 h-8 mx-auto text-green-500 mb-2" />
-                          <p className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                          <p className={`font-medium ${isDarkMode ? 'text-white' : 'text-white'}`}>
                             Comprobante subido correctamente
                           </p>
                         </div>
@@ -903,49 +903,49 @@ export default function DynamicFormPage() {
                     <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ backgroundColor: `${themeColors.primary}20` }}>
                       <MessageCircle className="w-8 h-8" style={{ color: themeColors.primary }} />
                     </div>
-                    <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-white'}`}>
                       Enviar Solicitud por WhatsApp
                     </h3>
-                    <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-200'}`}>
                       Revisa tu solicitud y envíala directamente al DJ
                     </p>
                   </div>
 
                   {/* Resumen de la solicitud */}
-                  <div className={`rounded-lg p-6 space-y-4 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-                    <h4 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Resumen de tu solicitud:</h4>
+                  <div className={`rounded-lg p-6 space-y-4 ${isDarkMode ? 'bg-gray-800/90' : 'bg-white/10 backdrop-blur-md border border-white/20'}`}>
+                    <h4 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-white'}`}>Resumen de tu solicitud:</h4>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                       <div>
-                        <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>Canción:</span>
-                        <p className={isDarkMode ? 'text-white' : 'text-gray-900'}>{musicRequest.songName}</p>
+                        <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-200'}`}>Canción:</span>
+                        <p className={isDarkMode ? 'text-white' : 'text-white'}>{musicRequest.songName}</p>
                       </div>
                       <div>
-                        <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>Artista:</span>
-                        <p className={isDarkMode ? 'text-white' : 'text-gray-900'}>{musicRequest.artistName}</p>
+                        <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-200'}`}>Artista:</span>
+                        <p className={isDarkMode ? 'text-white' : 'text-white'}>{musicRequest.artistName}</p>
                       </div>
                       <div>
-                        <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>Género:</span>
-                        <p className={isDarkMode ? 'text-white' : 'text-gray-900'}>{musicRequest.genre}</p>
+                        <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-200'}`}>Género:</span>
+                        <p className={isDarkMode ? 'text-white' : 'text-white'}>{musicRequest.genre}</p>
                       </div>
                       <div>
-                        <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>Solicitado por:</span>
-                        <p className={isDarkMode ? 'text-white' : 'text-gray-900'}>{musicRequest.requesterName}</p>
+                        <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-200'}`}>Solicitado por:</span>
+                        <p className={isDarkMode ? 'text-white' : 'text-white'}>{musicRequest.requesterName}</p>
                       </div>
                       <div>
-                        <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>Método de pago:</span>
-                        <p className={isDarkMode ? 'text-white' : 'text-gray-900'}>{musicRequest.selectedWallet}</p>
+                        <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-200'}`}>Método de pago:</span>
+                        <p className={isDarkMode ? 'text-white' : 'text-white'}>{musicRequest.selectedWallet}</p>
                       </div>
                       <div>
-                        <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>Monto:</span>
-                        <p className={isDarkMode ? 'text-white' : 'text-gray-900'}>${musicRequest.paymentAmount}</p>
+                        <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-200'}`}>Monto:</span>
+                        <p className={isDarkMode ? 'text-white' : 'text-white'}>${musicRequest.paymentAmount}</p>
                       </div>
                     </div>
                   </div>
 
                   {/* Mensaje adicional */}
                   <div className="space-y-2">
-                    <Label className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Mensaje adicional (opcional)</Label>
+                    <Label className={`font-medium ${isDarkMode ? 'text-white' : 'text-white'}`}>Mensaje adicional (opcional)</Label>
                     <Textarea
                       value={musicRequest.message}
                       onChange={(e) => handleInputChange('message', e.target.value)}
@@ -969,7 +969,7 @@ export default function DynamicFormPage() {
                       <MessageCircle className="w-6 h-6 mr-3" />
                       Enviar por WhatsApp
                     </Button>
-                    <p className={`text-xs mt-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                    <p className={`text-xs mt-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-200'}`}>
                       Se abrirá WhatsApp con tu solicitud lista para enviar
                     </p>
                   </div>
@@ -983,32 +983,32 @@ export default function DynamicFormPage() {
                     <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ backgroundColor: `${themeColors.primary}20` }}>
                       <CheckCircle className="w-10 h-10" style={{ color: themeColors.primary }} />
                     </div>
-                    <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2`}>
+                    <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-white'} mb-2`}>
                       ¡Solicitud Enviada!
                     </h3>
-                    <p className={`text-lg ${isDarkMode ? 'text-gray-200' : 'text-gray-700'} mb-6`}>
+                    <p className={`text-lg ${isDarkMode ? 'text-gray-200' : 'text-gray-200'} mb-6`}>
                       Tu solicitud de música ha sido enviada exitosamente
                     </p>
                     
                     <div className={`rounded-lg p-6 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'} text-left max-w-md mx-auto`}>
-                      <h4 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-3`}>Resumen:</h4>
+                      <h4 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-white'} mb-3`}>Resumen:</h4>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
-                          <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>Canción:</span>
-                          <span className={isDarkMode ? 'text-white' : 'text-gray-900'}>{musicRequest.songName}</span>
+                          <span className={isDarkMode ? 'text-gray-300' : 'text-gray-200'}>Canción:</span>
+                          <span className={isDarkMode ? 'text-white' : 'text-white'}>{musicRequest.songName}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>Artista:</span>
-                          <span className={isDarkMode ? 'text-white' : 'text-gray-900'}>{musicRequest.artistName}</span>
+                          <span className={isDarkMode ? 'text-gray-300' : 'text-gray-200'}>Artista:</span>
+                          <span className={isDarkMode ? 'text-white' : 'text-white'}>{musicRequest.artistName}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>Monto:</span>
-                          <span className={isDarkMode ? 'text-white' : 'text-gray-900'}>${musicRequest.paymentAmount}</span>
+                          <span className={isDarkMode ? 'text-gray-300' : 'text-gray-200'}>Monto:</span>
+                          <span className={isDarkMode ? 'text-white' : 'text-white'}>${musicRequest.paymentAmount}</span>
                         </div>
                       </div>
                     </div>
                     
-                    <div className={`mt-6 p-4 rounded-lg ${isDarkMode ? 'bg-green-900/20 border border-green-800' : 'bg-green-50 border border-green-200'}`}>
+                    <div className={`mt-6 p-4 rounded-lg ${isDarkMode ? 'bg-green-900/20 border border-green-800' : 'bg-green-500/10 backdrop-blur-md border border-green-400/30'}`}>
                       <p className={`text-sm ${isDarkMode ? 'text-green-300' : 'text-green-700'}`}>
                         ✅ Datos enviados por WhatsApp<br/>
                         ✅ Comprobante de pago subido<br/>
