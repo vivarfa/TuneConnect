@@ -16,7 +16,7 @@ export async function GET(
     }
     
     // Buscar el perfil del DJ por djId
-    const djProfile = getDjProfileBySlug(djId);
+    const djProfile = await getDjProfileBySlug(djId);
     
     if (!djProfile) {
       return NextResponse.json(

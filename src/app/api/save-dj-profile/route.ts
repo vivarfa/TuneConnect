@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     };
     
     // Guardar el perfil
-    saveDjProfile(djSlug, profileToSave);
+    await saveDjProfile(djSlug, profileToSave);
     
     console.log(`✅ Perfil guardado para ${djProfile.djName} con slug: ${djSlug}`);
     

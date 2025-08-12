@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
       do {
         uniqueCode = generateUniqueCode();
         attempts++;
-      } while (codeExists(uniqueCode) && attempts < 10);
+      } while (await codeExists(uniqueCode) && attempts < 10);
     
     if (attempts >= 10) {
       return NextResponse.json(
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     const djSlug = createDjSlug(djName.trim());
     
     // Almacenar el código
-    setCodeData(uniqueCode, {
+    await setCodeData(uniqueCode, {
       djName: djName.trim(),
       djSlug,
       djProfile,
@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    const codeInfo = getCodeData(code);
+    const codeInfo = await getCodeData(code);
     
     if (!codeInfo) {
       return NextResponse.json(

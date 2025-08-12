@@ -1,12 +1,19 @@
-// Simulamos una base de datos usando localStorage cuando está disponible
-// En producción, esto debería ser una base de datos real
+// Base de datos usando Vercel KV para producción y localStorage para desarrollo
+// En producción, esto usa Vercel KV para persistencia real
+
+import { kv } from '@vercel/kv';
 
 // Función para verificar si estamos en el cliente
 function isClient() {
   return typeof window !== 'undefined';
 }
 
-// Función para obtener datos del localStorage
+// Función para verificar si estamos en producción (Vercel)
+function isProduction() {
+  return process.env.NODE_ENV === 'production' && process.env.VERCEL;
+}
+
+// Función para obtener datos del localStorage (desarrollo)
 function getFromStorage(key: string) {
   if (!isClient()) return null;
   try {
@@ -17,7 +24,7 @@ function getFromStorage(key: string) {
   }
 }
 
-// Función para guardar datos en localStorage
+// Función para guardar datos en localStorage (desarrollo)
 function saveToStorage(key: string, data: any) {
   if (!isClient()) return;
   try {
@@ -27,7 +34,7 @@ function saveToStorage(key: string, data: any) {
   }
 }
 
-// Fallback en memoria para el servidor
+// Fallback en memoria para el servidor de desarrollo
 export const uniqueCodes = new Map<string, { 
   djName: string, 
   djSlug: string, 
@@ -38,10 +45,26 @@ export const uniqueCodes = new Map<string, {
 export const djProfiles = new Map<string, any>();
 
 // Función para obtener un código específico
-export function getCodeData(code: string) {
+export async function getCodeData(code: string) {
   const upperCode = code.toUpperCase();
   
-  // Intentar obtener del localStorage primero
+  // En producción, usar Vercel KV
+  if (isProduction()) {
+    try {
+      const data = await kv.get(`code:${upperCode}`);
+      if (data) {
+        return {
+          ...data,
+          createdAt: new Date((data as any).createdAt)
+        };
+      }
+    } catch (error) {
+      console.error('Error getting code from KV:', error);
+    }
+    return null;
+  }
+  
+  // En desarrollo, intentar obtener del localStorage primero
   if (isClient()) {
     const storedCodes = getFromStorage('uniqueCodes') || {};
     if (storedCodes[upperCode]) {
@@ -57,10 +80,20 @@ export function getCodeData(code: string) {
 }
 
 // Función para almacenar un nuevo código
-export function setCodeData(code: string, data: { djName: string, djSlug: string, djProfile: any, createdAt: Date }) {
+export async function setCodeData(code: string, data: { djName: string, djSlug: string, djProfile: any, createdAt: Date }) {
   const upperCode = code.toUpperCase();
   
-  // Guardar en localStorage si está disponible
+  // En producción, usar Vercel KV
+  if (isProduction()) {
+    try {
+      await kv.set(`code:${upperCode}`, data);
+      return;
+    } catch (error) {
+      console.error('Error setting code in KV:', error);
+    }
+  }
+  
+  // En desarrollo, guardar en localStorage si está disponible
   if (isClient()) {
     const storedCodes = getFromStorage('uniqueCodes') || {};
     storedCodes[upperCode] = data;
@@ -72,8 +105,31 @@ export function setCodeData(code: string, data: { djName: string, djSlug: string
 }
 
 // Función para buscar perfil por slug
-export function getDjProfileBySlug(slug: string) {
-  // Primero buscar en perfiles guardados directamente
+export async function getDjProfileBySlug(slug: string) {
+  // En producción, usar Vercel KV
+  if (isProduction()) {
+    try {
+      // Buscar en perfiles guardados directamente
+      const profile = await kv.get(`profile:${slug}`);
+      if (profile) {
+        return profile;
+      }
+      
+      // Buscar en códigos únicos generados
+      const keys = await kv.keys('code:*');
+      for (const key of keys) {
+        const data = await kv.get(key);
+        if (data && (data as any).djSlug === slug) {
+          return (data as any).djProfile;
+        }
+      }
+    } catch (error) {
+      console.error('Error getting DJ profile from KV:', error);
+    }
+    return null;
+  }
+  
+  // En desarrollo, buscar en localStorage
   if (isClient()) {
     const storedProfiles = getFromStorage('djProfiles') || {};
     if (storedProfiles[slug]) {
@@ -103,8 +159,18 @@ export function getDjProfileBySlug(slug: string) {
 }
 
 // Función para guardar un perfil de DJ
-export function saveDjProfile(slug: string, profile: any) {
-  // Guardar en localStorage si está disponible
+export async function saveDjProfile(slug: string, profile: any) {
+  // En producción, usar Vercel KV
+  if (isProduction()) {
+    try {
+      await kv.set(`profile:${slug}`, profile);
+      return;
+    } catch (error) {
+      console.error('Error saving DJ profile to KV:', error);
+    }
+  }
+  
+  // En desarrollo, guardar en localStorage si está disponible
   if (isClient()) {
     const storedProfiles = getFromStorage('djProfiles') || {};
     storedProfiles[slug] = profile;
@@ -116,10 +182,37 @@ export function saveDjProfile(slug: string, profile: any) {
 }
 
 // Función para obtener todos los perfiles de DJ
-export function getAllDjProfiles() {
+export async function getAllDjProfiles() {
   const allProfiles = new Map();
   
-  // Obtener de localStorage si está disponible
+  // En producción, usar Vercel KV
+  if (isProduction()) {
+    try {
+      // Obtener perfiles guardados directamente
+      const profileKeys = await kv.keys('profile:*');
+      for (const key of profileKeys) {
+        const slug = key.replace('profile:', '');
+        const profile = await kv.get(key);
+        if (profile) {
+          allProfiles.set(slug, profile);
+        }
+      }
+      
+      // Obtener perfiles de códigos únicos
+      const codeKeys = await kv.keys('code:*');
+      for (const key of codeKeys) {
+        const data = await kv.get(key);
+        if (data && !allProfiles.has((data as any).djSlug)) {
+          allProfiles.set((data as any).djSlug, (data as any).djProfile);
+        }
+      }
+    } catch (error) {
+      console.error('Error getting all DJ profiles from KV:', error);
+    }
+    return allProfiles;
+  }
+  
+  // En desarrollo, obtener de localStorage
   if (isClient()) {
     const storedProfiles = getFromStorage('djProfiles') || {};
     const storedCodes = getFromStorage('uniqueCodes') || {};
@@ -155,10 +248,21 @@ export function getAllDjProfiles() {
 }
 
 // Función para verificar si un código existe
-export function codeExists(code: string): boolean {
+export async function codeExists(code: string): Promise<boolean> {
   const upperCode = code.toUpperCase();
   
-  // Verificar en localStorage si está disponible
+  // En producción, usar Vercel KV
+  if (isProduction()) {
+    try {
+      const exists = await kv.exists(`code:${upperCode}`);
+      return exists === 1;
+    } catch (error) {
+      console.error('Error checking code existence in KV:', error);
+      return false;
+    }
+  }
+  
+  // En desarrollo, verificar en localStorage
   if (isClient()) {
     const storedCodes = getFromStorage('uniqueCodes') || {};
     return upperCode in storedCodes;
