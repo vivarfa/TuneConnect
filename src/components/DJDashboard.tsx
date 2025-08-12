@@ -19,8 +19,9 @@ import { Slider } from "@/components/ui/slider";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import Image from "next/image";
+import Link from "next/link";
 import { DJProfile } from "@/lib/types";
-import { User, CreditCard, QrCode, Palette, Upload, ArrowRight, ArrowLeft, Moon, Sun, Type, Zap, Settings, Link, Copy, RefreshCw, Plus, Trash2, Eye, Edit, Camera, Phone, Mail, Globe, ChevronLeft, ChevronRight, Check, X, Download, Building2, RotateCcw, Save, Sparkles, ExternalLink, Clock, CalendarIcon } from "lucide-react";
+import { User, CreditCard, QrCode, Palette, Upload, ArrowRight, ArrowLeft, Moon, Sun, Type, Zap, Settings, Link as LinkIcon, Copy, RefreshCw, Plus, Trash2, Eye, Edit, Camera, Phone, Mail, Globe, ChevronLeft, ChevronRight, Check, X, Download, Building2, RotateCcw, Save, Sparkles, ExternalLink, Clock, CalendarIcon, Home } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Badge } from "./ui/badge";
 import { Separator } from "./ui/separator";
@@ -450,7 +451,24 @@ const generateQrAndLink = async () => {
                                         </p>
                                     </div>
                                 </div>
-                                <div className="flex items-center justify-center sm:justify-end">
+                                <div className="flex items-center justify-center sm:justify-end gap-2 sm:gap-3">
+                                    {/* Botón de Inicio */}
+                                    <Link href="/">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className={`flex items-center gap-1 sm:gap-2 transition-all duration-300 hover:scale-105 hover:shadow-lg ${
+                                                isDarkMode 
+                                                    ? 'bg-slate-700/50 border-slate-600/50 text-slate-300 hover:bg-slate-700/70 hover:text-white' 
+                                                    : 'bg-white/80 border-gray-300/50 text-gray-700 hover:bg-white hover:text-gray-900'
+                                            }`}
+                                        >
+                                            <Home className="h-3 w-3 sm:h-4 sm:w-4 transition-all duration-300 hover:scale-110" />
+                                            <span className="text-xs sm:text-sm font-medium hidden sm:inline">Inicio</span>
+                                        </Button>
+                                    </Link>
+                                    
+                                    {/* Toggle de Tema */}
                                     <div className={`flex items-center gap-2 sm:gap-3 rounded-lg sm:rounded-xl p-2 sm:p-3 transition-all duration-300 hover:scale-105 hover:shadow-lg group ${
                                         isDarkMode ? 'bg-slate-700/50 border border-slate-600/50 hover:bg-slate-700/70' : 'bg-gray-100/50 border border-gray-300/50 hover:bg-gray-100/70'
                                     }`}>
@@ -664,7 +682,9 @@ function SidebarNav({ activeTab, setActiveTab, djProfile, canNavigateToTab, isDa
                             <div className="absolute inset-0 bg-gradient-to-br from-green-500/20 to-emerald-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         </div>
                         <div className="flex-1 min-w-0 transition-all duration-300 group-hover:translate-x-1">
-                            <p className="text-xs sm:text-sm font-medium truncate transition-colors duration-300" style={{ color: '#ffffff' }}>
+                            <p className={`text-xs sm:text-sm font-medium truncate transition-colors duration-300 ${
+                                isDarkMode ? 'text-white' : 'text-gray-900'
+                            }`}>
                                 {djProfile.djName || 'DJ Name'}
                             </p>
                             <p className={`text-xs truncate transition-colors duration-300 hidden lg:block ${
