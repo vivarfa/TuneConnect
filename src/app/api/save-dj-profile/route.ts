@@ -5,7 +5,18 @@ import { saveDjProfile } from '@/lib/database';
 
 export async function POST(request: NextRequest) {
   try {
-    const { djProfile }: { djProfile: DJProfile } = await request.json();
+    let requestBody;
+    try {
+      requestBody = await request.json();
+    } catch (jsonError) {
+      console.error('Error parsing JSON:', jsonError);
+      return NextResponse.json(
+        { error: 'Invalid JSON format in request body' },
+        { status: 400 }
+      );
+    }
+    
+    const { djProfile }: { djProfile: DJProfile } = requestBody;
 
     if (!djProfile || !djProfile.djName) {
       return NextResponse.json({ success: false, error: 'El perfil del DJ es inválido.' }, { status: 400 });

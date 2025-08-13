@@ -24,6 +24,17 @@ function createDjSlug(djName: string): string {
 
 export async function POST(request: NextRequest) {
   try {
+    let requestBody;
+    try {
+      requestBody = await request.json();
+    } catch (jsonError) {
+      console.error('Error parsing JSON:', jsonError);
+      return NextResponse.json(
+        { error: 'Invalid JSON format in request body' },
+        { status: 400 }
+      );
+    }
+    
     const { 
       djName, 
       djProfile, 
@@ -32,7 +43,7 @@ export async function POST(request: NextRequest) {
       originalContent,
       contentType,
       qrSettings
-    } = await request.json();
+    } = requestBody;
     
     // Determinar si es para DJ o para convertidor QR
     const isQrConverter = originalContent && contentType;

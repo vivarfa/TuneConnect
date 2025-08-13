@@ -29,7 +29,18 @@ function createDjSlug(djName: string): string {
 // POST - Crear nuevo formulario DJ
 export async function POST(request: NextRequest) {
   try {
-    const { djProfile, expirationMonths = 6 } = await request.json();
+    let requestBody;
+    try {
+      requestBody = await request.json();
+    } catch (jsonError) {
+      console.error('Error parsing JSON:', jsonError);
+      return NextResponse.json(
+        { error: 'Invalid JSON format in request body' },
+        { status: 400 }
+      );
+    }
+    
+    const { djProfile, expirationMonths = 6 } = requestBody;
     
     // Validaciones
     if (!djProfile || !djProfile.djName || djProfile.djName.trim().length === 0) {
@@ -226,7 +237,18 @@ export async function GET(request: NextRequest) {
 // PUT - Agregar solicitud de música
 export async function PUT(request: NextRequest) {
   try {
-    const { id, musicRequest } = await request.json();
+    let requestBody;
+    try {
+      requestBody = await request.json();
+    } catch (jsonError) {
+      console.error('Error parsing JSON:', jsonError);
+      return NextResponse.json(
+        { error: 'Invalid JSON format in request body' },
+        { status: 400 }
+      );
+    }
+    
+    const { id, musicRequest } = requestBody;
     
     if (!id || !musicRequest) {
       return NextResponse.json(
