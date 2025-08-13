@@ -3,7 +3,18 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(request: NextRequest) {
   try {
     // 1. RECIBIMOS LA URL DE LA IMAGEN DESDE EL FRONTEND
-    const { url: imageUrl } = await request.json();
+    let requestBody;
+    try {
+      requestBody = await request.json();
+    } catch (jsonError) {
+      console.error('Error parsing JSON:', jsonError);
+      return NextResponse.json(
+        { error: 'Invalid JSON format in request body' },
+        { status: 400 }
+      );
+    }
+    
+    const { url: imageUrl } = requestBody;
     
     if (!imageUrl) {
       return NextResponse.json({ error: 'La URL de la imagen es requerida.' }, { status: 400 });
