@@ -1666,15 +1666,15 @@ const LandingPage = () => {
           <div className={`border-t pt-8 ${
             isDarkMode ? 'border-slate-800' : 'border-gray-200'
           }`}>
-            <div className="flex flex-col md:flex-row justify-between items-center">
+            <div className="flex justify-center items-center">
               <motion.div 
-                className={`flex flex-wrap justify-center md:justify-start gap-6 text-sm mb-4 md:mb-0 ${
-                  isDarkMode ? 'text-gray-400' : 'text-gray-600'
-                }`}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.2 }}
-              >
+                  className={`flex flex-wrap justify-center gap-6 text-sm mb-4 ${
+                    isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                  }`}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 0.2 }}
+                >
                 <motion.span
                   whileHover={{ scale: 1.05, color: '#8b5cf6' }}
                   transition={{ duration: 0.2 }}
@@ -1710,22 +1710,6 @@ const LandingPage = () => {
                 >
                   ⚡ Tiempo Real
                 </motion.span>
-              </motion.div>
-              
-              <motion.div 
-                className={`text-sm ${
-                  isDarkMode ? 'text-gray-500' : 'text-gray-500'
-                }`}
-                animate={{
-                  opacity: [0.6, 1, 0.6],
-                }}
-                transition={{
-                  duration: 4,
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-              >
-                © {new Date().getFullYear()} TuneConnect. Hecho con ❤️ para DJs profesionales.
               </motion.div>
             </div>
           </div>

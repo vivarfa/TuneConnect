@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { Music, Send, User, CreditCard, Clock, CheckCircle, AlertCircle, Loader2, ArrowLeft, ArrowRight, Upload, MessageCircle, DollarSign, Camera } from 'lucide-react';
-import { DJProfile } from '@/types/dj';
+import { DJProfile } from '@/lib/types';
 
 interface FormData {
   id: string;
@@ -334,6 +334,35 @@ export default function DynamicFormPage() {
     text: djProfile.colors?.text || '#ffffff'
   };
 
+  // Utilidades simples para contraste basado en el color de fondo del input
+  const parseColorToRGB = (color?: string) => {
+    if (!color) return null;
+    const c = color.trim();
+    if (c.startsWith('#')) {
+      let hex = c.slice(1);
+      if (hex.length === 3) hex = hex.split('').map(ch => ch + ch).join('');
+      const int = parseInt(hex, 16);
+      return { r: (int >> 16) & 255, g: (int >> 8) & 255, b: int & 255 };
+    }
+    const rgbMatch = c.match(/rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/i);
+    if (rgbMatch) {
+      return { r: parseInt(rgbMatch[1]), g: parseInt(rgbMatch[2]), b: parseInt(rgbMatch[3]) };
+    }
+    return null;
+  };
+  const isColorLight = (color?: string) => {
+    const rgb = parseColorToRGB(color);
+    if (!rgb) return false;
+    const luminance = 0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b; // 0-255
+    return luminance > 186; // umbral típico para claro
+  };
+  // Fondo efectivo del input: usa personalización si existe, de lo contrario un valor seguro por tema
+  const effectiveInputBg = customization?.inputBackgroundColor ?? (isDarkMode ? '#374151' : '#ffffff');
+  const inputBgIsLight = isColorLight(effectiveInputBg);
+  const inputTextClass = inputBgIsLight ? 'text-gray-900' : 'text-white';
+  const placeholderTextClass = inputBgIsLight ? 'placeholder:text-gray-600' : 'placeholder:text-gray-300';
+  const getContrastingText = (bg?: string) => (isColorLight(bg) ? '#111827' : '#ffffff');
+
   // Obtener el símbolo de moneda correcto
   const selectedCountryData = digitalWalletsByCountry[djProfile.payment?.country as keyof typeof digitalWalletsByCountry || 'Perú'];
   const currencySymbol = djProfile.payment?.customCurrencySymbol || selectedCountryData?.symbol || '$';
@@ -527,7 +556,7 @@ export default function DynamicFormPage() {
             </CardHeader>
           </div>
           
-          <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
+          <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6" style={{ color: '#ffffff' }}>
             <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
               {/* Paso 1: Información de la canción */}
               {currentStep === 1 && (
@@ -551,14 +580,14 @@ export default function DynamicFormPage() {
                         value={musicRequest.songName}
                         onChange={(e) => handleInputChange('songName', e.target.value)}
                         placeholder="Ej: Blinding Lights"
-                        className={`h-10 sm:h-12 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] focus:scale-[1.02] focus:shadow-xl ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
-                        style={customization ? {
-                          backgroundColor: customization.inputBackgroundColor,
-                          color: customization.inputTextColor,
-                          borderColor: customization.inputBorderColor,
-                          borderRadius: `${customization.borderRadius}px`,
-                          fontSize: `${customization.fontSize}px`
-                        } : {}}
+                        className="h-10 sm:h-12 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] focus:scale-[1.02] focus:shadow-xl placeholder:text-gray-600"
+                        style={{
+                          backgroundColor: '#ffffff',
+                          color: '#000000',
+                          borderColor: customization?.inputBorderColor || (isDarkMode ? '#4b5563' : '#d1d5db'),
+                          borderRadius: customization ? `${customization.borderRadius}px` : '0.5rem',
+                          fontSize: customization ? `${customization.fontSize}px` : undefined
+                        }}
                         required
                       />
                     </div>
@@ -569,14 +598,14 @@ export default function DynamicFormPage() {
                         value={musicRequest.artistName}
                         onChange={(e) => handleInputChange('artistName', e.target.value)}
                         placeholder="Ej: The Weeknd"
-                        className={`h-10 sm:h-12 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] focus:scale-[1.02] focus:shadow-xl ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
-                        style={customization ? {
-                          backgroundColor: customization.inputBackgroundColor,
-                          color: customization.inputTextColor,
-                          borderColor: customization.inputBorderColor,
-                          borderRadius: `${customization.borderRadius}px`,
-                          fontSize: `${customization.fontSize}px`
-                        } : {}}
+                        className="h-10 sm:h-12 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] focus:scale-[1.02] focus:shadow-xl placeholder:text-gray-600"
+                        style={{
+                          backgroundColor: '#ffffff',
+                          color: '#000000',
+                          borderColor: customization?.inputBorderColor || (isDarkMode ? '#4b5563' : '#d1d5db'),
+                          borderRadius: customization ? `${customization.borderRadius}px` : '0.5rem',
+                          fontSize: customization ? `${customization.fontSize}px` : undefined
+                        }}
                         required
                       />
                     </div>
@@ -586,14 +615,14 @@ export default function DynamicFormPage() {
                     <Label className={`font-medium ${isDarkMode ? 'text-white' : 'text-white'} transition-colors duration-200`}>Género *</Label>
                     <Select value={musicRequest.genre} onValueChange={(value) => handleInputChange('genre', value)}>
                       <SelectTrigger 
-                        className={`h-10 sm:h-12 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] focus:scale-[1.02] focus:shadow-xl ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
-                        style={customization ? {
-                          backgroundColor: customization.inputBackgroundColor,
-                          color: customization.inputTextColor,
-                          borderColor: customization.inputBorderColor,
-                          borderRadius: `${customization.borderRadius}px`,
-                          fontSize: `${customization.fontSize}px`
-                        } : {}}
+                        className="h-10 sm:h-12 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] focus:scale-[1.02] focus:shadow-xl"
+                         style={{
+                           backgroundColor: '#ffffff',
+                           color: '#000000',
+                           borderColor: customization?.inputBorderColor || (isDarkMode ? '#4b5563' : '#d1d5db'),
+                           borderRadius: customization ? `${customization.borderRadius}px` : '0.5rem',
+                           fontSize: customization ? `${customization.fontSize}px` : undefined
+                         }}
                       >
                         <SelectValue placeholder="Selecciona un género" />
                       </SelectTrigger>
@@ -611,14 +640,14 @@ export default function DynamicFormPage() {
                       value={musicRequest.requesterName}
                       onChange={(e) => handleInputChange('requesterName', e.target.value)}
                       placeholder="¿Cómo te llamas?"
-                      className={`h-12 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] focus:scale-[1.02] focus:shadow-xl ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
-                      style={customization ? {
-                        backgroundColor: customization.inputBackgroundColor,
-                        color: customization.inputTextColor,
-                        borderColor: customization.inputBorderColor,
-                        borderRadius: `${customization.borderRadius}px`,
-                        fontSize: `${customization.fontSize}px`
-                      } : {}}
+                      className="h-12 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] focus:scale-[1.02] focus:shadow-xl placeholder:text-gray-600"
+                      style={{
+                        backgroundColor: '#ffffff',
+                        color: '#000000',
+                        borderColor: customization?.inputBorderColor || (isDarkMode ? '#4b5563' : '#d1d5db'),
+                        borderRadius: customization ? `${customization.borderRadius}px` : '0.5rem',
+                        fontSize: customization ? `${customization.fontSize}px` : undefined
+                      }}
                       required
                     />
                   </div>
@@ -645,23 +674,7 @@ export default function DynamicFormPage() {
                     ))}
                   </div>
 
-                  <div className="text-center mb-6 relative z-10">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 hover:shadow-lg" 
-                         style={{ 
-                           backgroundColor: `${themeColors.primary}20`,
-                           boxShadow: `0 0 20px ${themeColors.primary}40`
-                         }}>
-                      <div className="text-4xl font-bold" style={{ color: '#ffffff' }}>
-                        {currencySymbol}
-                      </div>
-                    </div>
-                    <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-white'}`}>
-                      Información de Pago
-                    </h3>
-                    <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-200'}`}>
-                      Selecciona tu método de pago preferido
-                    </p>
-                  </div>
+                  {/* Encabezado de pago eliminado: mostramos directamente el monto de propina */}
 
                   {/* Monto de propina - Mostrar primero */}
                   <div className="text-center space-y-4 mb-6 relative z-10">
@@ -701,7 +714,7 @@ export default function DynamicFormPage() {
                       </Avatar>
                       <div className="absolute inset-0 rounded-full bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
                     </div>
-                    <h4 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-white'}`}>
+                    <h4 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                       {djProfile.djName}
                     </h4>
                   </div>
@@ -714,7 +727,15 @@ export default function DynamicFormPage() {
                         const tipAmount = djProfile?.payment?.minTip || '5';
                         handleInputChange('paymentAmount', tipAmount.toString());
                       }}>
-                        <SelectTrigger className={`h-12 transition-all duration-300 hover:shadow-lg ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white hover:bg-gray-600' : 'border-gray-300 hover:border-gray-400'}`}>
+                        <SelectTrigger 
+                          className="h-12 transition-all duration-300 hover:shadow-lg"
+                          style={{
+                            backgroundColor: '#ffffff',
+                            color: '#000000',
+                            borderColor: customization?.inputBorderColor || (isDarkMode ? '#4b5563' : '#d1d5db'),
+                            borderRadius: customization ? `${customization.borderRadius}px` : '0.5rem'
+                          }}
+                        >
                           <SelectValue placeholder="Selecciona método de pago" />
                         </SelectTrigger>
                         <SelectContent>
@@ -726,7 +747,7 @@ export default function DynamicFormPage() {
                               </div>
                             </SelectItem>
                           )}
-                          {djProfile.payment?.digitalWallets?.map((wallet, index) => (
+                          {djProfile.payment?.digitalWallets?.map((wallet: { name: string; account: string; qrCodeUrl?: string }, index: number) => (
                             <SelectItem key={index} value={wallet.name}>
                               <div className="flex items-center gap-2">
                                 <CreditCard className="w-4 h-4" />
@@ -752,10 +773,10 @@ export default function DynamicFormPage() {
                                  style={{ backgroundColor: '#0070ba' }}>
                               <CreditCard className="w-8 h-8 text-white" />
                             </div>
-                            <h4 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-white'}`}>
+                            <h4 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                               PayPal
                             </h4>
-                            <p className={`text-sm ${isDarkMode ? 'text-gray-200' : 'text-gray-200'}`}>
+                            <p className={`text-sm ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
                               Email: {djProfile.payment?.paypalEmail}
                             </p>
                             {djProfile.payment?.paypalMeLink && (
@@ -775,17 +796,17 @@ export default function DynamicFormPage() {
                         ) : (
                           // Mostrar QR para billeteras digitales
                           (() => {
-                            const selectedWalletData = djProfile.payment?.digitalWallets?.find(w => w.name === musicRequest.selectedWallet);
+                            const selectedWalletData = djProfile.payment?.digitalWallets?.find((w: { name: string; account: string; qrCodeUrl?: string }) => w.name === musicRequest.selectedWallet);
                             return selectedWalletData && (
                               <div className="text-center space-y-4">
                                 <div className="w-16 h-16 mx-auto rounded-full flex items-center justify-center" 
                                      style={{ backgroundColor: themeColors.primary }}>
                                   <CreditCard className="w-8 h-8 text-white" />
                                 </div>
-                                <h4 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-white'}`}>
+                                <h4 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                                   {selectedWalletData.name}
                                 </h4>
-                                <p className={`text-sm ${isDarkMode ? 'text-gray-200' : 'text-gray-200'}`}>
+                                <p className={`text-sm ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
                                   Cuenta: {selectedWalletData.account}
                                 </p>
                                 {selectedWalletData.qrCodeUrl && (
@@ -797,7 +818,7 @@ export default function DynamicFormPage() {
                                         className="w-48 h-48 mx-auto rounded-lg"
                                       />
                                     </div>
-                                    <p className={`text-xs mt-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-200'}`}>
+                                    <p className={`text-xs mt-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                                       Escanea este código QR para realizar el pago
                                     </p>
                                   </div>
@@ -824,7 +845,7 @@ export default function DynamicFormPage() {
                     <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-white'}`}>
                       Enviar Solicitud por WhatsApp
                     </h3>
-                    <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-200'}`}>
+                    <p className={`text-sm ${isDarkMode ? 'text-white' : 'text-white'}`}>
                       Sube tu comprobante de pago para verificar la transacción
                     </p>
                   </div>
@@ -856,7 +877,7 @@ export default function DynamicFormPage() {
                               <Camera className="w-12 h-12 mx-auto" style={{ color: themeColors.primary }} />
                             )}
                             <div>
-                              <p className={`text-lg font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                              <p className={`text-lg font-medium ${isDarkMode ? 'text-white' : 'text-white'}`}>
                                 {uploadingProof ? 'Subiendo...' : 'Seleccionar archivo'}
                               </p>
                               <p className={`text-sm ${isDarkMode ? 'text-white' : 'text-white'}`}>
@@ -879,14 +900,14 @@ export default function DynamicFormPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleInputChange('paymentProof', '')}
-                            className="absolute top-2 right-2"
+                            className={`absolute top-2 right-2 ${isDarkMode ? 'bg-white text-black border-gray-300 hover:bg-gray-100' : 'bg-white text-gray-900 border-gray-300 hover:bg-gray-100'}`}
                           >
                             Cambiar
                           </Button>
                         </div>
                         <div className="text-center">
                           <CheckCircle className="w-8 h-8 mx-auto text-green-500 mb-2" />
-                          <p className={`font-medium ${isDarkMode ? 'text-white' : 'text-white'}`}>
+                          <p className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                             Comprobante subido correctamente
                           </p>
                         </div>
@@ -906,51 +927,57 @@ export default function DynamicFormPage() {
                     <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-white'}`}>
                       Enviar Solicitud por WhatsApp
                     </h3>
-                    <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-200'}`}>
+                    <p className={`text-sm ${isDarkMode ? 'text-white' : 'text-white'}`}>
                       Revisa tu solicitud y envíala directamente al DJ
                     </p>
                   </div>
 
                   {/* Resumen de la solicitud */}
-                  <div className={`rounded-lg p-6 space-y-4 ${isDarkMode ? 'bg-gray-800/90' : 'bg-white/10 backdrop-blur-md border border-white/20'}`}>
-                    <h4 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-white'}`}>Resumen de tu solicitud:</h4>
+                  <div className={`rounded-lg p-6 space-y-4 bg-white border border-gray-200`}>
+                    <h4 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Resumen de tu solicitud:</h4>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                       <div>
-                        <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-200'}`}>Canción:</span>
-                        <p className={isDarkMode ? 'text-white' : 'text-white'}>{musicRequest.songName}</p>
+                        <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Canción:</span>
+                        <p className={`text-black`}>{musicRequest.songName}</p>
                       </div>
                       <div>
-                        <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-200'}`}>Artista:</span>
-                        <p className={isDarkMode ? 'text-white' : 'text-white'}>{musicRequest.artistName}</p>
+                        <span className={`font-medium text-gray-700`}>Artista:</span>
+                        <p className={`text-black`}>{musicRequest.artistName}</p>
                       </div>
                       <div>
-                        <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-200'}`}>Género:</span>
-                        <p className={isDarkMode ? 'text-white' : 'text-white'}>{musicRequest.genre}</p>
+                        <span className={`font-medium text-gray-700`}>Género:</span>
+                        <p className={`text-black`}>{musicRequest.genre}</p>
                       </div>
                       <div>
-                        <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-200'}`}>Solicitado por:</span>
-                        <p className={isDarkMode ? 'text-white' : 'text-white'}>{musicRequest.requesterName}</p>
+                        <span className={`font-medium text-gray-700`}>Solicitado por:</span>
+                        <p className={`text-black`}>{musicRequest.requesterName}</p>
                       </div>
                       <div>
-                        <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-200'}`}>Método de pago:</span>
-                        <p className={isDarkMode ? 'text-white' : 'text-white'}>{musicRequest.selectedWallet}</p>
+                        <span className={`font-medium text-gray-700`}>Método de pago:</span>
+                        <p className={`text-black`}>{musicRequest.selectedWallet}</p>
                       </div>
                       <div>
-                        <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-200'}`}>Monto:</span>
-                        <p className={isDarkMode ? 'text-white' : 'text-white'}>${musicRequest.paymentAmount}</p>
+                        <span className={`font-medium text-gray-700`}>Monto:</span>
+                        <p className={`text-black`}>{currencySymbol}{musicRequest.paymentAmount}</p>
                       </div>
                     </div>
                   </div>
 
                   {/* Mensaje adicional */}
                   <div className="space-y-2">
-                    <Label className={`font-medium ${isDarkMode ? 'text-white' : 'text-white'}`}>Mensaje adicional (opcional)</Label>
+                    <Label className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Mensaje adicional (opcional)</Label>
                     <Textarea
                       value={musicRequest.message}
                       onChange={(e) => handleInputChange('message', e.target.value)}
                       placeholder="Algún mensaje especial para el DJ..."
-                      className={`${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
+                      className="transition-all duration-300"
+                      style={{
+                        backgroundColor: '#ffffff',
+                        color: '#000000',
+                        borderColor: customization?.inputBorderColor || (isDarkMode ? '#4b5563' : '#d1d5db'),
+                        borderRadius: customization ? `${customization.borderRadius}px` : '0.5rem'
+                      }}
                       rows={3}
                     />
                   </div>
@@ -990,20 +1017,20 @@ export default function DynamicFormPage() {
                       Tu solicitud de música ha sido enviada exitosamente
                     </p>
                     
-                    <div className={`rounded-lg p-6 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'} text-left max-w-md mx-auto`}>
+                    <div className={`rounded-lg p-6 bg-white text-left max-w-md mx-auto`}>
                       <h4 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-white'} mb-3`}>Resumen:</h4>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
-                          <span className={isDarkMode ? 'text-gray-300' : 'text-gray-200'}>Canción:</span>
-                          <span className={isDarkMode ? 'text-white' : 'text-white'}>{musicRequest.songName}</span>
+                          <span className={'text-gray-700'}>Canción:</span>
+                          <span className={'text-black'}>{musicRequest.songName}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className={isDarkMode ? 'text-gray-300' : 'text-gray-200'}>Artista:</span>
-                          <span className={isDarkMode ? 'text-white' : 'text-white'}>{musicRequest.artistName}</span>
+                          <span className={'text-gray-700'}>Artista:</span>
+                          <span className={'text-black'}>{musicRequest.artistName}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className={isDarkMode ? 'text-gray-300' : 'text-gray-200'}>Monto:</span>
-                          <span className={isDarkMode ? 'text-white' : 'text-white'}>${musicRequest.paymentAmount}</span>
+                          <span className={'text-gray-700'}>Monto:</span>
+                          <span className={'text-black'}>{currencySymbol}{musicRequest.paymentAmount}</span>
                         </div>
                       </div>
                     </div>

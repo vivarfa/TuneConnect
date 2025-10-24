@@ -547,3 +547,12 @@ body {
 .animate-slide-in {
   animation: slideInUp 0.6s ease-out;
 }
+
+/* Utilidad para forzar contraste en inputs del primer bloque */
+.tc-input-contrast {
+  color: #000 !important;
+  background-color: #fff !important;
+}
+.tc-input-contrast::placeholder {
+  color: #4b5563 !important; /* gray-600 */
+}

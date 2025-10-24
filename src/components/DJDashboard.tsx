@@ -1051,7 +1051,7 @@ function QrConverterSection({ isDarkMode }: {
                             onClick={() => setInputType('url')}
                             className={`flex items-center gap-2 ${inputType === 'url' ? 'bg-blue-600 hover:bg-blue-700' : ''}`}
                         >
-                            <Link className="w-4 h-4" /> URL
+                            <LinkIcon className="w-4 h-4" /> URL
                         </Button>
                         <Button
                             variant={inputType === 'image' ? 'default' : 'outline'}
@@ -1284,6 +1284,8 @@ function PaymentSettings({ djProfile, onPaymentChange, onNext, onPrevious, isSte
             setNewWallet({ name: '', account: '', qrCodeUrl: '' });
             setQrPreview('');
             setShowAddWallet(false);
+            setShowCustomWallet(false);
+            setCustomWalletName('');
         }
     };
     
@@ -1578,7 +1580,17 @@ function PaymentSettings({ djProfile, onPaymentChange, onNext, onPrevious, isSte
                         {showAddWallet ? (
                             <div className={`p-4 rounded-lg border ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'}`}>
                                 <div className="space-y-3">
-                                    <Select value={newWallet.name} onValueChange={(value) => setNewWallet({...newWallet, name: value})}>
+                                    <Select value={showCustomWallet ? "custom" : newWallet.name} onValueChange={(value) => {
+                                        if (value === 'custom') {
+                                            setShowCustomWallet(true);
+                                            setCustomWalletName('');
+                                            setNewWallet({...newWallet, name: ''});
+                                        } else {
+                                            setShowCustomWallet(false);
+                                            setCustomWalletName('');
+                                            setNewWallet({...newWallet, name: value});
+                                        }
+                                    }}>
                                         <SelectTrigger className={isDarkMode ? 'bg-gray-600 border-gray-500 text-white' : ''}>
                                             <SelectValue placeholder="Selecciona una billetera" />
                                         </SelectTrigger>
@@ -1591,13 +1603,16 @@ function PaymentSettings({ djProfile, onPaymentChange, onNext, onPrevious, isSte
                                     </Select>
                                     
                                     {/* Campo personalizado para billetera */}
-                                    {newWallet.name === 'custom' && (
+                                    {showCustomWallet && (
                                         <Input
                                             placeholder="Nombre de la billetera personalizada"
                                             value={customWalletName}
                                             onChange={(e) => {
                                                 setCustomWalletName(e.target.value);
-                                                setNewWallet({...newWallet, name: e.target.value});
+                                                // Solo actualizar newWallet.name si hay contenido
+                                                if (e.target.value.trim()) {
+                                                    setNewWallet({...newWallet, name: e.target.value.trim()});
+                                                }
                                             }}
                                             className={isDarkMode ? 'bg-gray-600 border-gray-500 text-white' : ''}
                                         />
@@ -2672,8 +2687,8 @@ function PreviewPage({ djProfile, onNext, onPrevious, isDarkMode }: {
                                     <div 
                                         className={`p-4 rounded-lg border-2 cursor-pointer transition-all group ${
                                             formData.selectedWallet === 'PayPal' 
-                                                ? 'border-blue-500 bg-blue-50' 
-                                                : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                                                ? (isDarkMode ? 'border-blue-500 bg-white' : 'border-blue-500 bg-white') 
+                                                : (isDarkMode ? 'border-gray-600 bg-gray-700 hover:bg-gray-600' : 'border-gray-200 bg-white hover:bg-gray-50')
                                         }`}
                                         onClick={() => {
                                             setFormData({...formData, selectedWallet: 'PayPal'});
@@ -2692,11 +2707,11 @@ function PreviewPage({ djProfile, onNext, onPrevious, isDarkMode }: {
                                                 </svg>
                                             </div>
                                             <div className="flex-1">
-                                                 <div className="font-medium flex items-center gap-2">
+                                                 <div className={`font-medium flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                                                      PayPal
                                                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">Oficial</span>
                                                  </div>
-                                                 <div className="text-sm opacity-70">{djProfile.payment.paypalEmail}</div>
+                                                 <div className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{djProfile.payment.paypalEmail}</div>
                                              </div>
                                              <div className="flex items-center text-blue-500 group-hover:text-blue-600 transition-colors">
                                                  <ExternalLink className="w-4 h-4" />
@@ -2710,16 +2725,16 @@ function PreviewPage({ djProfile, onNext, onPrevious, isDarkMode }: {
                                         key={index}
                                         className={`p-6 rounded-lg border-2 cursor-pointer transition-all ${
                                             formData.selectedWallet === wallet.name 
-                                                ? 'border-blue-500 bg-blue-50' 
-                                                : 'border-gray-200 hover:border-gray-300'
+                                                ? (isDarkMode ? 'border-blue-500 bg-white' : 'border-blue-500 bg-white') 
+                                                : (isDarkMode ? 'border-gray-600 bg-gray-700 hover:bg-gray-600' : 'border-gray-200 bg-white hover:bg-gray-50')
                                         }`}
                                         onClick={() => setFormData({...formData, selectedWallet: wallet.name})}
                                         style={{ borderRadius: `${customization.borderRadius}px` }}
                                     >
                                         {/* Nombre y número de la billetera */}
                                         <div className="text-center mb-4">
-                                            <div className="font-bold text-lg">{wallet.name}</div>
-                                            <div className="text-sm opacity-70 mt-1">{wallet.account}</div>
+                                            <div className={`font-bold text-lg ${formData.selectedWallet === wallet.name ? 'text-gray-900' : (isDarkMode ? 'text-white' : 'text-gray-900')}`}>{wallet.name}</div>
+                                            <div className={`text-sm mt-1 ${formData.selectedWallet === wallet.name ? 'text-gray-700' : (isDarkMode ? 'text-gray-300' : 'text-gray-700')}`}>{wallet.account}</div>
                                         </div>
                                         
                                         {/* QR Code centrado y grande */}
@@ -2732,9 +2747,9 @@ function PreviewPage({ djProfile, onNext, onPrevious, isDarkMode }: {
                                                         className="w-48 h-48 object-cover rounded-lg"
                                                     />
                                                 </div>
-                                                <p className="text-sm mt-3 opacity-70 text-center">
+                                                <p className={`text-sm mt-3 text-center ${formData.selectedWallet === wallet.name ? 'text-gray-700' : (isDarkMode ? 'text-gray-300' : 'text-gray-700')}`}>
                                                     Escanea para pagar rápidamente
-                                                </p>
+                                                 </p>
                                             </div>
                                         )}
                                     </div>
@@ -2770,7 +2785,7 @@ function PreviewPage({ djProfile, onNext, onPrevious, isDarkMode }: {
                                     <Button 
                                         variant="outline"
                                         onClick={() => document.getElementById('payment-proof')?.click()}
-                                        className="mt-2"
+                                        className={`mt-2 ${isDarkMode ? 'bg-white text-black border-gray-300 hover:bg-gray-100' : 'bg-white text-gray-900 border-gray-300 hover:bg-gray-100'}`}
                                     >
                                         {formData.paymentProofUrl ? 'Cambiar comprobante' : 'Seleccionar archivo'}
                                     </Button>
@@ -2783,7 +2798,7 @@ function PreviewPage({ djProfile, onNext, onPrevious, isDarkMode }: {
                     {formStep === 4 && (
                         <div className="space-y-4">
                             <h3 className="text-lg font-semibold mb-4">✅ Confirmar y Enviar</h3>
-                            <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+                            <div className={`p-4 rounded-lg space-y-2 ${isDarkMode ? 'bg-white text-black' : 'bg-gray-50 text-gray-900'}`}>
                                 <div><strong>Canción:</strong> {formData.songName}</div>
                                 <div><strong>Artista:</strong> {formData.artistName}</div>
                                 {formData.genre && <div><strong>Género:</strong> {formData.genre}</div>}
